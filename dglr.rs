@@ -107,14 +107,14 @@ fn dglr_test() {
     let mut depgraph: DepGraph = DepGraph::new();
 
     depgraph.add_dependencies("a",vec!["b","c","d"]);
-    depgraph.add_dependencies("b",vec!["d"]);
+    depgraph.add_dependency("b","d");
     depgraph.add_dependencies("c",vec!["e","m","g"]);
-    depgraph.add_dependencies("e",vec!["f"]);
-    depgraph.add_dependencies("g",vec!["h"]);
-    depgraph.add_dependencies("h",vec!["i"]);
+    depgraph.add_dependency("e","f");
+    depgraph.add_dependency("g","h");
+    depgraph.add_dependency("h","i");
     depgraph.add_dependencies("i",vec!["j","k"]);
     depgraph.add_dependencies("k",vec!["l","m"]);
-    depgraph.add_dependencies("m",vec!["n"]);
+    depgraph.add_dependency("m","n");
 
     let deps = depgraph.get_ordered_dependencies_of("a");
 
