@@ -13,6 +13,7 @@ pub struct DepGraph {
 }
 
 struct WalkState {
+    curpath: HashSet<String>,
     output: Vec<String>,
 }
 
@@ -51,20 +52,34 @@ impl DepGraph {
     }
 
     pub fn get_ordered_dependencies_of(&self, thing: &str)
-        -> Vec<String>
+        -> Option<Vec<String>>
     {
         let mut state = WalkState {
+            curpath: HashSet::new(),
             output: Vec::new(),
         };
 
         debug!("Recursing for the first time, with {}",thing);
-        self.get_deps_of_recurse(&String::from_str(thing), &mut state);
+        if ! self.get_deps_of_recurse(&String::from_str(thing), &mut state)
+        {
+            return None;
+        }
+
         debug!("output is {}",state.output);
-        state.output
+        Some(state.output)
     }
 
     fn get_deps_of_recurse(&self, thing: &String, state: &mut WalkState)
+        -> bool
     {
+        // If we find thing, we have a circular dependency:
+        if state.curpath.contains(thing) {
+            error!("Circular dependency detected at {}", thing);
+            return false;
+        }
+
+        state.curpath.insert(thing.clone());
+
         match self.dependencies.find(thing) {
             None => {
                 debug!("{} has no dependencies",thing);
@@ -77,7 +92,9 @@ impl DepGraph {
                     if !state.output.contains(n) {
 
                         debug!("Recursing for {}",n);
-                        self.get_deps_of_recurse(n, state);
+                        if ! self.get_deps_of_recurse(n, state) {
+                            return false;
+                        }
 
                         debug!("Appending {} to output",n);
                         state.output.push(n.clone());
@@ -85,6 +102,10 @@ impl DepGraph {
                 }
             },
         }
+
+        state.curpath.remove(thing);
+
+        return true;
     }
 }
 
@@ -102,10 +123,8 @@ fn dglr_test() {
     depgraph.add_dependencies("k",vec!["l","m"]);
     depgraph.add_dependency("m","n");
 
-    let deps = depgraph.get_ordered_dependencies_of("a");
-
-    println!("Deps of i = {}",deps);
-
+    let deps = depgraph.get_ordered_dependencies_of("a").unwrap();
+    debug!("Deps of a = {}",deps);
     assert!( deps == vec![String::from_str("d"),
                           String::from_str("b"),
                           String::from_str("f"),
@@ -121,11 +140,16 @@ fn dglr_test() {
                           String::from_str("c")] );
 
 
-    let deps2 = depgraph.get_ordered_dependencies_of("i");
-    println!("Deps of i = {}",deps2);
+    let deps2 = depgraph.get_ordered_dependencies_of("i").unwrap();
+    debug!("Deps of i = {}",deps2);
     assert!( deps2 == vec![String::from_str("j"),
                            String::from_str("l"),
                            String::from_str("n"),
                            String::from_str("m"),
                            String::from_str("k")] );
+
+    depgraph.add_dependency("i","g");
+    let deps3 = depgraph.get_ordered_dependencies_of("a");
+    assert!(deps3 == None);
+    debug!("Circular dependency was detected.");
 }
