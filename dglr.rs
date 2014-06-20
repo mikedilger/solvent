@@ -13,7 +13,6 @@ pub struct DepGraph {
 }
 
 struct WalkState {
-    remaining: HashSet<String>,
     output: Vec<String>,
 }
 
@@ -56,18 +55,7 @@ impl DepGraph {
     {
         let mut state = WalkState {
             output: Vec::new(),
-            remaining: HashSet::new(),
         };
-
-        // Scan the dependencies, and save all nodes in remaining
-        for (n, dependsOn) in self.dependencies.iter() {
-            debug!("preparing {}",n);
-            state.remaining.insert(n.clone());
-            for n2 in dependsOn.iter() {
-                debug!("preparing {}",n2);
-                state.remaining.insert(n2.clone());
-            }
-        }
 
         debug!("Recursing for the first time, with {}",thing);
         self.get_deps_of_recurse(&String::from_str(thing), &mut state);
@@ -86,19 +74,17 @@ impl DepGraph {
                 debug!("Handling the dependencies of {}",thing);
                 for n in deplist.iter() {
                     // If thing was not yet visited, recurse into it
-                    if state.remaining.contains(n) {
+                    if !state.output.contains(n) {
 
                         debug!("Recursing for {}",n);
                         self.get_deps_of_recurse(n, state);
 
                         debug!("Appending {} to output",n);
                         state.output.push(n.clone());
-                        state.remaining.remove(n);
                     }
                 }
             },
         }
-
     }
 }
 
