@@ -1,24 +1,52 @@
 // Dependency Graph Library in Rust
+
+//! dglr is a Dependency Graph Library in Rust.
+//! In short, you register elements and their dependencies, and then
+//! ask for the dependencies of any element in an order that satisfies.
+//!
+//! Elements are simply &str strings.  You register them with
+//! register_dependency() or register_dependencies().
+//!
+//! Dependenies are (currently) just a list of other elements that
+//! the element in question depends on.  [In the future, we may add
+//! boolean logic, but currently they are all AND-ed together].
+//!
+//! Then call get_ordered_dependencies_of() and the library does the
+//! magic and returns an order which will work.  It is possible that
+//! other orders also work, but the library's algorithm is
+//! deterministic, so you'll always get the same particular one.
+
+#![crate_id = "dglr#0.1"]
 #![crate_type = "lib"]
 
-// For log related macros:
+// Required for log and rustdoc:
 #![feature(phase)]
 #[phase(plugin, link)]
+
 extern crate log;
 
 use std::collections::hashmap::{HashMap,HashSet};
 
+/// This is the dependency graph.  You can create it yourself, or
+/// use the convenience methods of new(), register_dependency() and
+/// register_dependencies() to build one up (that must be mutable).
 pub struct DepGraph {
+    /// List of dependencies.  Key is the element, values are the
+    /// other elements that the key element depends upon.
     pub dependencies: HashMap<String,Vec<String>>,
 }
 
+// Internal structure keeping state between recursive functions
 struct WalkState {
+    // The path we have currently walked
     curpath: HashSet<String>,
+    // The output so far
     output: Vec<String>,
 }
 
 impl DepGraph {
 
+    /// Create an empty DepGraph.
     pub fn new() -> DepGraph
     {
         DepGraph {
@@ -26,7 +54,11 @@ impl DepGraph {
         }
     }
 
-    pub fn add_dependency<'a>( &mut self,
+    /// Add a dependency to a DepGraph.  The thing does not need
+    /// to pre-exist, nor do the dependency elements.  But if the
+    /// thing does pre-exist, the dependsOn will be added to its
+    /// existing dependency list.
+    pub fn register_dependency<'a>( &mut self,
                                 thing: &'a str,
                                 dependsOn: &'a str )
     {
@@ -37,7 +69,11 @@ impl DepGraph {
             );
     }
 
-    pub fn add_dependencies<'a>( &mut self,
+    /// Add multiple dependencies of one thing to a DepGraph.  The
+    /// thing does not need to pre-exist, nor do the dependency elements.
+    /// But if the thing does pre-exist, the dependsOn will be added
+    /// to its existing dependency list.
+    pub fn register_dependencies<'a>( &mut self,
                                   thing: &'a str,
                                   dependsOn: &'a[&'a str] )
     {
@@ -51,6 +87,10 @@ impl DepGraph {
             );
     }
 
+    /// This returns either a vector of elements (Strings) in the
+    /// order which they must be resolved as dependencies of thing,
+    /// or in the case where there is a dependency cycle, None is
+    /// returned.
     pub fn get_ordered_dependencies_of(&self, thing: &str)
         -> Option<Vec<String>>
     {
@@ -69,6 +109,7 @@ impl DepGraph {
         Some(state.output)
     }
 
+    // Internal function, recursion for get_ordered_dependencies_of
     fn get_deps_of_recurse(&self, thing: &String, state: &mut WalkState)
         -> bool
     {
@@ -113,15 +154,15 @@ impl DepGraph {
 fn dglr_test() {
     let mut depgraph: DepGraph = DepGraph::new();
 
-    depgraph.add_dependencies("a",&["b","c","d"]);
-    depgraph.add_dependency("b","d");
-    depgraph.add_dependencies("c",&["e","m","g"]);
-    depgraph.add_dependency("e","f");
-    depgraph.add_dependency("g","h");
-    depgraph.add_dependency("h","i");
-    depgraph.add_dependencies("i",&["j","k"]);
-    depgraph.add_dependencies("k",&["l","m"]);
-    depgraph.add_dependency("m","n");
+    depgraph.register_dependencies("a",&["b","c","d"]);
+    depgraph.register_dependency("b","d");
+    depgraph.register_dependencies("c",&["e","m","g"]);
+    depgraph.register_dependency("e","f");
+    depgraph.register_dependency("g","h");
+    depgraph.register_dependency("h","i");
+    depgraph.register_dependencies("i",&["j","k"]);
+    depgraph.register_dependencies("k",&["l","m"]);
+    depgraph.register_dependency("m","n");
 
     let deps = depgraph.get_ordered_dependencies_of("a").unwrap();
     debug!("Deps of a = {}",deps);
@@ -148,7 +189,7 @@ fn dglr_test() {
                            String::from_str("m"),
                            String::from_str("k")] );
 
-    depgraph.add_dependency("i","g");
+    depgraph.register_dependency("i","g");
     let deps3 = depgraph.get_ordered_dependencies_of("a");
     assert!(deps3 == None);
     debug!("Circular dependency was detected.");
