@@ -89,10 +89,10 @@ impl DepGraph {
 
     /// This returns either a vector of elements (Strings) in the
     /// order which they must be resolved as dependencies of thing,
-    /// or in the case where there is a dependency cycle, None is
-    /// returned.
+    /// or in the case where there is a dependency cycle, an error
+    /// string returned.
     pub fn get_ordered_dependencies_of(&self, thing: &str)
-        -> Option<Vec<String>>
+        -> Result<Vec<String>,String>
     {
         let mut state = WalkState {
             curpath: HashSet::new(),
@@ -102,11 +102,11 @@ impl DepGraph {
         debug!("Recursing for the first time, with {}",thing);
         if ! self.get_deps_of_recurse(&String::from_str(thing), &mut state)
         {
-            return None;
+            return Err(format!("Circular dependency detected at {}",thing));
         }
 
         debug!("output is {}",state.output);
-        Some(state.output)
+        Ok(state.output)
     }
 
     // Internal function, recursion for get_ordered_dependencies_of
@@ -114,10 +114,7 @@ impl DepGraph {
         -> bool
     {
         // If we find thing, we have a circular dependency:
-        if state.curpath.contains(thing) {
-            error!("Circular dependency detected at {}", thing);
-            return false;
-        }
+        if state.curpath.contains(thing) { return false; }
 
         state.curpath.insert(thing.clone());
 
@@ -191,6 +188,10 @@ fn dglr_test() {
 
     depgraph.register_dependency("i","g");
     let deps3 = depgraph.get_ordered_dependencies_of("a");
-    assert!(deps3 == None);
-    debug!("Circular dependency was detected.");
+    match deps3 {
+        Ok(_) => fail!("Unexpected result!"),
+        Err(e) => {
+            debug!("Circular dependency was detected {}",e);
+        }
+    }
 }
