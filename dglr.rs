@@ -39,7 +39,7 @@ impl DepGraph {
 
     pub fn add_dependencies<'a>( &mut self,
                                   thing: &'a str,
-                                  dependsOn: Vec<&'a str> )
+                                  dependsOn: &'a[&'a str] )
     {
         let newvec: Vec<String> = dependsOn.iter().map(
             |s| String::from_str(*s)).collect();
@@ -113,14 +113,14 @@ impl DepGraph {
 fn dglr_test() {
     let mut depgraph: DepGraph = DepGraph::new();
 
-    depgraph.add_dependencies("a",vec!["b","c","d"]);
+    depgraph.add_dependencies("a",&["b","c","d"]);
     depgraph.add_dependency("b","d");
-    depgraph.add_dependencies("c",vec!["e","m","g"]);
+    depgraph.add_dependencies("c",&["e","m","g"]);
     depgraph.add_dependency("e","f");
     depgraph.add_dependency("g","h");
     depgraph.add_dependency("h","i");
-    depgraph.add_dependencies("i",vec!["j","k"]);
-    depgraph.add_dependencies("k",vec!["l","m"]);
+    depgraph.add_dependencies("i",&["j","k"]);
+    depgraph.add_dependencies("k",&["l","m"]);
     depgraph.add_dependency("m","n");
 
     let deps = depgraph.get_ordered_dependencies_of("a").unwrap();
