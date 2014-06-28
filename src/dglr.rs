@@ -27,6 +27,7 @@ extern crate log;
 
 use std::collections::hashmap::{HashMap,HashSet};
 use std::iter::{Iterator};
+#[allow(unused_imports)]
 use std::task;
 
 /// This is the dependency graph.  You can create it yourself, or
@@ -48,6 +49,9 @@ pub struct DepGraph {
 }
 
 pub struct DepGraphIterator<'a> {
+    depgraph: &'a mut DepGraph
+}
+pub struct DepGraphSatisfyingIterator<'a> {
     depgraph: &'a mut DepGraph
 }
 
@@ -138,6 +142,13 @@ impl DepGraph {
             depgraph: self
         }
     }
+
+    pub fn satisfying_iter<'a>(&'a mut self) -> DepGraphSatisfyingIterator<'a>
+    {
+        DepGraphSatisfyingIterator {
+            depgraph: self
+        }
+    }
 }
 
 impl<'a> Iterator<String> for DepGraphIterator<'a> {
@@ -152,6 +163,23 @@ impl<'a> Iterator<String> for DepGraphIterator<'a> {
         }
         self.depgraph.curpath.clear();
         Some(self.depgraph.get_next_dependency(&thing))
+    }
+}
+
+impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
+    fn next(&mut self) -> Option<String>
+    {
+        let thing = match self.depgraph.target {
+            None => return None,
+            Some(ref thing) => thing.clone()
+        };
+        if self.depgraph.satisfied.contains(&thing) {
+            return None;
+        }
+        self.depgraph.curpath.clear();
+        let next = self.depgraph.get_next_dependency(&thing);
+        self.depgraph.mark_as_satisfied([next.as_slice()]);
+        Some(next)
     }
 }
 
@@ -197,6 +225,32 @@ fn dglr_test_branching() {
                              String::from_str("i"),
                              String::from_str("h"),
                              String::from_str("g"),
+                             String::from_str("c"),
+                             String::from_str("a")] );
+    //info!("Deps of a = {}",results);
+}
+
+#[test]
+fn dglr_test_satisfying() {
+    let mut depgraph: DepGraph = DepGraph::new();
+
+    depgraph.register_dependencies("a",&["b","c","d"]);
+    depgraph.register_dependency("b","d");
+    depgraph.register_dependencies("c",&["e"]);
+
+    depgraph.set_target("a");
+
+    let mut results: Vec<String> = Vec::new();
+
+    for thing in depgraph.satisfying_iter() {
+        // detect infinite looping bugs
+        assert!(results.len() < 30);
+        results.push(thing);
+    }
+
+    assert!( results == vec![String::from_str("d"),
+                             String::from_str("b"),
+                             String::from_str("e"),
                              String::from_str("c"),
                              String::from_str("a")] );
     //info!("Deps of a = {}",results);
