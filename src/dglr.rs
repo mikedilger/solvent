@@ -26,6 +26,8 @@
 extern crate log;
 
 use std::collections::hashmap::{HashMap,HashSet};
+use std::iter::{Iterator};
+use std::task;
 
 /// This is the dependency graph.  You can create it yourself, or
 /// use the convenience methods of new(), register_dependency() and
@@ -34,14 +36,19 @@ pub struct DepGraph {
     /// List of dependencies.  Key is the element, values are the
     /// other elements that the key element depends upon.
     pub dependencies: HashMap<String,Vec<String>>,
+
+    // (private) target we are trying to satisfy
+    target: Option<String>,
+
+    // (private) elements already satisfied
+    satisfied: HashSet<String>,
+
+    // (private) current path, for cycle detection
+    curpath: HashSet<String>,
 }
 
-// Internal structure keeping state between recursive functions
-struct WalkState {
-    // The path we have currently walked
-    curpath: HashSet<String>,
-    // The output so far
-    output: Vec<String>,
+pub struct DepGraphIterator<'a> {
+    depgraph: &'a mut DepGraph
 }
 
 impl DepGraph {
@@ -51,6 +58,9 @@ impl DepGraph {
     {
         DepGraph {
             dependencies: HashMap::new(),
+            target: None,
+            curpath: HashSet::new(),
+            satisfied: HashSet::new(),
         }
     }
 
@@ -87,68 +97,66 @@ impl DepGraph {
             );
     }
 
-    /// This returns either a vector of elements (Strings) in the
-    /// order which they must be resolved as dependencies of thing,
-    /// or in the case where there is a dependency cycle, an error
-    /// string returned.
-    pub fn get_ordered_dependencies_of(&self, thing: &str)
-        -> Result<Vec<String>,String>
+    pub fn set_target<'a>( &mut self, target: &'a str )
     {
-        let mut state = WalkState {
-            curpath: HashSet::new(),
-            output: Vec::new(),
-        };
-
-        debug!("Recursing for the first time, with {}",thing);
-        if ! self.get_deps_of_recurse(&String::from_str(thing), &mut state)
-        {
-            return Err(format!("Circular dependency detected at {}",thing));
-        }
-
-        debug!("output is {}",state.output);
-        Ok(state.output)
+        self.target = Some(String::from_str(target));
     }
 
-    // Internal function, recursion for get_ordered_dependencies_of
-    fn get_deps_of_recurse(&self, thing: &String, state: &mut WalkState)
-        -> bool
+    pub fn mark_as_satisfied<'a>( &mut self,
+                                   things: &'a[&'a str] )
     {
-        // If we find thing, we have a circular dependency:
-        if state.curpath.contains(thing) { return false; }
-
-        state.curpath.insert(thing.clone());
-
-        match self.dependencies.find(thing) {
-            None => {
-                debug!("{} has no dependencies",thing);
-            },
-
-            Some(deplist) => {
-                debug!("Handling the dependencies of {}",thing);
-                for n in deplist.iter() {
-                    // If thing was not yet visited, recurse into it
-                    if !state.output.contains(n) {
-
-                        debug!("Recursing for {}",n);
-                        if ! self.get_deps_of_recurse(n, state) {
-                            return false;
-                        }
-
-                        debug!("Appending {} to output",n);
-                        state.output.push(n.clone());
-                    }
-                }
-            },
+        for thing in things.iter() {
+            self.satisfied.insert(String::from_str(*thing));
         }
+    }
 
-        state.curpath.remove(thing);
+    fn get_next_dependency(&mut self, thing: &String) -> String
+    {
+        if self.curpath.contains(thing) {
+            fail!("Circular dependency graph at {}",thing);
+        }
+        self.curpath.insert(thing.clone());
 
-        return true;
+        let deplist = match self.dependencies.find(thing) {
+            None => return thing.clone(),
+            Some(deplist) => deplist.clone() // ouch
+        };
+
+        for n in deplist.iter() {
+            if self.satisfied.contains(n) {
+                continue;
+            }
+            return self.get_next_dependency(n);
+        }
+        // things dependencies are satisfied
+        thing.clone()
+    }
+
+    pub fn iter<'a>(&'a mut self) -> DepGraphIterator<'a>
+    {
+        DepGraphIterator {
+            depgraph: self
+        }
+    }
+}
+
+impl<'a> Iterator<String> for DepGraphIterator<'a> {
+    fn next(&mut self) -> Option<String>
+    {
+        let thing = match self.depgraph.target {
+            None => return None,
+            Some(ref thing) => thing.clone()
+        };
+        if self.depgraph.satisfied.contains(&thing) {
+            return None;
+        }
+        self.depgraph.curpath.clear();
+        Some(self.depgraph.get_next_dependency(&thing))
     }
 }
 
 #[test]
-fn dglr_test() {
+fn dglr_test_branching() {
     let mut depgraph: DepGraph = DepGraph::new();
 
     depgraph.register_dependencies("a",&["b","c","d"]);
@@ -161,37 +169,100 @@ fn dglr_test() {
     depgraph.register_dependencies("k",&["l","m"]);
     depgraph.register_dependency("m","n");
 
-    let deps = depgraph.get_ordered_dependencies_of("a").unwrap();
-    debug!("Deps of a = {}",deps);
-    assert!( deps == vec![String::from_str("d"),
-                          String::from_str("b"),
-                          String::from_str("f"),
-                          String::from_str("e"),
-                          String::from_str("n"),
-                          String::from_str("m"),
-                          String::from_str("j"),
-                          String::from_str("l"),
-                          String::from_str("k"),
-                          String::from_str("i"),
-                          String::from_str("h"),
-                          String::from_str("g"),
-                          String::from_str("c")] );
+    depgraph.set_target("a");
 
+    let mut results: Vec<String> = Vec::new();
 
-    let deps2 = depgraph.get_ordered_dependencies_of("i").unwrap();
-    debug!("Deps of i = {}",deps2);
-    assert!( deps2 == vec![String::from_str("j"),
-                           String::from_str("l"),
-                           String::from_str("n"),
-                           String::from_str("m"),
-                           String::from_str("k")] );
+    loop {
+        // detect infinite looping bugs
+        assert!(results.len() < 30);
 
-    depgraph.register_dependency("i","g");
-    let deps3 = depgraph.get_ordered_dependencies_of("a");
-    match deps3 {
-        Ok(_) => fail!("Unexpected result!"),
-        Err(e) => {
-            debug!("Circular dependency was detected {}",e);
-        }
+        let thing = match depgraph.iter().next() {
+            Some(x) => x,
+            None => break,
+        };
+        depgraph.mark_as_satisfied([thing.as_slice()]);
+        results.push(thing);
     }
+
+    assert!( results == vec![String::from_str("d"),
+                             String::from_str("b"),
+                             String::from_str("f"),
+                             String::from_str("e"),
+                             String::from_str("n"),
+                             String::from_str("m"),
+                             String::from_str("j"),
+                             String::from_str("l"),
+                             String::from_str("k"),
+                             String::from_str("i"),
+                             String::from_str("h"),
+                             String::from_str("g"),
+                             String::from_str("c"),
+                             String::from_str("a")] );
+    //info!("Deps of a = {}",results);
+}
+
+#[test]
+fn dglr_test_circular() {
+
+    let task_result = task::try(proc() {
+        let mut depgraph: DepGraph = DepGraph::new();
+        depgraph.register_dependency("a","b");
+        depgraph.register_dependency("b","c");
+        depgraph.register_dependency("c","a");
+        depgraph.set_target("a");
+
+        let mut results: Vec<String> = Vec::new();
+
+        loop {
+            // Detect infinite looping bugs by
+            // breaking out successfully (successful
+            // proc() means failed test!)
+            if results.len() >= 30 { break; }
+
+            let thing = match depgraph.iter().next() {
+                Some(x) => x,
+                None => break,
+            };
+            depgraph.mark_as_satisfied([thing.as_slice()]);
+            results.push(thing);
+        }
+    });
+    match task_result {
+        Ok(_) => fail!("Should have failed at the circular dependency!"),
+        Err(_) => () //info!("Successfully detected the circular dependency (ignore task failure)"),
+    };
+}
+
+#[test]
+fn dglr_test_satisfied_stoppage() {
+
+    let mut depgraph: DepGraph = DepGraph::new();
+    depgraph.register_dependencies("superconn", []);
+    depgraph.register_dependencies("owneruser", ["superconn"]);
+    depgraph.register_dependencies("appuser", ["superconn"]);
+    depgraph.register_dependencies("database", ["owneruser"]);
+    depgraph.register_dependencies("ownerconn", ["database","owneruser"]);
+    depgraph.register_dependencies("adminconn", ["database"]);
+    depgraph.register_dependencies("extensions", ["database","adminconn"]);
+    depgraph.register_dependencies("schema_table", ["database","ownerconn"]);
+    depgraph.register_dependencies("schemas", ["ownerconn","extensions","schema_table","appuser"]);
+    depgraph.register_dependencies("appconn", ["database","appuser","schemas"]);
+
+    depgraph.set_target("appconn");
+    depgraph.mark_as_satisfied(["owneruser","appuser"]);
+
+    let mut results: Vec<String> = Vec::new();
+
+    loop {
+        assert!(results.len() < 30);
+
+        let thing = match depgraph.iter().next() {
+            Some(x) => x,
+            None => break,
+        };
+        depgraph.mark_as_satisfied([thing.as_slice()]);
+        results.push(thing);
+    }
+    assert!( !results.contains(&String::from_str("superconn")) );
 }
