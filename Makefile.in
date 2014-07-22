@@ -5,7 +5,7 @@ BUILDDIR := build
 INSTALL_DIR := %PREFIX%
 
 DGLR_SRC := $(shell find src -name '*.rs' -print)
-DGLR_LIB := $(BUILDDIR)/$(shell $(RUSTC) --crate-file-name src/dglr.rs)
+DGLR_LIB := $(BUILDDIR)/$(shell $(RUSTC) --print-file-name src/dglr.rs)
 
 all: $(DGLR_LIB)
 
