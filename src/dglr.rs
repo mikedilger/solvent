@@ -16,7 +16,7 @@
 //! other orders also work, but the library's algorithm is
 //! deterministic, so you'll always get the same particular one.
 
-#![crate_id = "dglr#0.1"]
+#![crate_name = "dglr"]
 #![crate_type = "lib"]
 
 // Required for log and rustdoc:
