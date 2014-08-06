@@ -1,0 +1,10 @@
+[project]
+
+name = "dglr"
+version = "0.0.0"
+authors = [ "mike@mikedilger.com" ]
+
+[[lib]]
+
+name = "dglr"
+path = "src/dglr.rs"
