@@ -11,10 +11,11 @@
 //! the element in question depends on.  [In the future, we may add
 //! boolean logic, but currently they are all AND-ed together].
 //!
-//! Then call get_ordered_dependencies_of() and the library does the
-//! magic and returns an order which will work.  It is possible that
-//! other orders also work, but the library's algorithm is
-//! deterministic, so you'll always get the same particular one.
+//! Then iterate over .iter() to get the ordered dependencies, and
+//! the library does the magic and returns an order which will work.
+//! It is possible that other orders also work, but the library's
+//! algorithm is deterministic, so you'll always get the same
+//! particular one.
 
 #![crate_name = "dglr"]
 #![crate_type = "lib"]
