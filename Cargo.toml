@@ -4,7 +4,7 @@ name = "dglr"
 version = "0.0.0"
 authors = [ "mike@mikedilger.com" ]
 
-[[lib]]
+[lib]
 
 name = "dglr"
 path = "src/dglr.rs"
