@@ -70,28 +70,28 @@ impl DepGraph {
 
     /// Add a dependency to a DepGraph.  The thing does not need
     /// to pre-exist, nor do the dependency elements.  But if the
-    /// thing does pre-exist, the dependsOn will be added to its
+    /// thing does pre-exist, the depends_on will be added to its
     /// existing dependency list.
     pub fn register_dependency<'a>( &mut self,
                                 thing: &'a str,
-                                dependsOn: &'a str )
+                                depends_on: &'a str )
     {
         self.dependencies.insert_or_update_with(
             String::from_str(thing),
-            vec![String::from_str(dependsOn)],
-            |_,v| { v.push(String::from_str(dependsOn)); }
+            vec![String::from_str(depends_on)],
+            |_,v| { v.push(String::from_str(depends_on)); }
             );
     }
 
     /// Add multiple dependencies of one thing to a DepGraph.  The
     /// thing does not need to pre-exist, nor do the dependency elements.
-    /// But if the thing does pre-exist, the dependsOn will be added
+    /// But if the thing does pre-exist, the depends_on will be added
     /// to its existing dependency list.
     pub fn register_dependencies<'a>( &mut self,
                                   thing: &'a str,
-                                  dependsOn: &'a[&'a str] )
+                                  depends_on: &'a[&'a str] )
     {
-        let newvec: Vec<String> = dependsOn.iter().map(
+        let newvec: Vec<String> = depends_on.iter().map(
             |s| String::from_str(*s)).collect();
 
         self.dependencies.insert_or_update_with(
