@@ -26,7 +26,7 @@
 
 extern crate log;
 
-use std::collections::hashmap::{HashMap,HashSet};
+use std::collections::hashmap::{HashMap,HashSet,Occupied,Vacant};
 use std::iter::{Iterator};
 #[allow(unused_imports)]
 use std::task;
@@ -77,11 +77,10 @@ impl DepGraph {
                                 thing: &'a str,
                                 depends_on: &'a str )
     {
-        self.dependencies.insert_or_update_with(
-            String::from_str(thing),
-            vec![String::from_str(depends_on)],
-            |_,v| { v.push(String::from_str(depends_on)); }
-            );
+        match self.dependencies.entry( String::from_str(thing) ) {
+            Vacant(entry) => { entry.set( vec![String::from_str(depends_on)] ); },
+            Occupied(mut entry) => { (*entry.get_mut()).push(String::from_str(depends_on)); },
+        }
     }
 
     /// Add multiple dependencies of one thing to a DepGraph.  The
@@ -95,11 +94,10 @@ impl DepGraph {
         let newvec: Vec<String> = depends_on.iter().map(
             |s| String::from_str(*s)).collect();
 
-        self.dependencies.insert_or_update_with(
-            String::from_str(thing),
-            newvec.clone(),
-            |_,v| { v.push_all(newvec.as_slice()); }
-            );
+        match self.dependencies.entry( String::from_str(thing) ) {
+            Vacant(entry) => { entry.set( newvec.clone() ); },
+            Occupied(mut entry) => { (*entry.get_mut()).push_all(newvec.as_slice()); },
+        }
     }
 
     pub fn set_target<'a>( &mut self, target: &'a str )
