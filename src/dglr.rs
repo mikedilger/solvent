@@ -116,7 +116,7 @@ impl DepGraph {
     fn get_next_dependency(&mut self, thing: &String) -> String
     {
         if self.curpath.contains(thing) {
-            fail!("Circular dependency graph at {}",thing);
+            panic!("Circular dependency graph at {}",thing);
         }
         self.curpath.insert(thing.clone());
 
@@ -282,7 +282,7 @@ fn dglr_test_circular() {
         }
     });
     match task_result {
-        Ok(_) => fail!("Should have failed at the circular dependency!"),
+        Ok(_) => panic!("Should have failed at the circular dependency!"),
         Err(_) => () //info!("Successfully detected the circular dependency (ignore task failure)"),
     };
 }
