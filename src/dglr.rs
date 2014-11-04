@@ -26,7 +26,8 @@
 
 extern crate log;
 
-use std::collections::hashmap::{HashMap,HashSet,Occupied,Vacant};
+use std::collections::{HashMap,HashSet};
+use std::collections::hash_map::{Occupied,Vacant};
 use std::iter::{Iterator};
 #[allow(unused_imports)]
 use std::task;
