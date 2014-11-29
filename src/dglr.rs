@@ -121,7 +121,7 @@ impl DepGraph {
         }
         self.curpath.insert(thing.clone());
 
-        let deplist = match self.dependencies.find(thing) {
+        let deplist = match self.dependencies.get(thing) {
             None => return thing.clone(),
             Some(deplist) => deplist.clone() // ouch
         };
@@ -178,7 +178,7 @@ impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
         }
         self.depgraph.curpath.clear();
         let next = self.depgraph.get_next_dependency(&thing);
-        self.depgraph.mark_as_satisfied([next.as_slice()]);
+        self.depgraph.mark_as_satisfied(&[next.as_slice()]);
         Some(next)
     }
 }
