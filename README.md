@@ -36,3 +36,8 @@ dglr does not yet handle boolean logic, e.g. A depends on (!B || (B && !D))
 but it is my intention to support boolean logic eventually, and I've worked
 out how to do it in my head.  But as I haven't needed it for my schema
 upgrade situation, I just haven't gotten around to it yet.
+
+TODO:
+* boolean logic
+* optional dependencies and dependency filtering
+* compare to cargo/core/resolver/mod.rs
