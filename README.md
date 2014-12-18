@@ -74,19 +74,4 @@ slices (&[&str]), these borrows do not persist beyond the lifetime of
 the register function call, as they are internally copied into Strings
 and Vecs (and HashMaps).
 
-Solvent does not yet handle boolean logic, e.g. `A` depends on `!B || B && !D`
-but it is my intention to support boolean logic eventually, and I've worked
-out how to do it in my head.  But as I haven't needed it for my schema
-upgrade situation, I just haven't gotten around to it yet.
-
-### TODO
-* Boolean logic: A depends on !B || B && !D  (disjunctive normal form will
-  likely be required at first)
-* Node versioning, or the ability for library consumers to more easily
-  manage node version such as gcc-4.7.4, gcc-4.8.3, gcc-4.9.2.
-* Dependency filtering
-* Compare to others:
-** cargo/core/resolver/mod.rs
-** PHP compoer's libsolver
-** yum depsolve
-** depresolve.go
+Solvent does not yet handle boolean logic.  See issue [#1](https://github.com/mikedilger/solvent/issues/1).
