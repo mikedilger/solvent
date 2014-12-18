@@ -1,14 +1,14 @@
 [package]
-name = "dglr"
+name = "solvent"
 version = "0.1.0"
 authors = [ "mike@mikedilger.com" ]
-description = "Dependency Graph Library in Rust"
+description = "Dependency Resolver library"
 readme = "README.md"
-keywords = [ "dependency", "graph" ]
+keywords = [ "dependency", "graph", "solver", "resolver" ]
 license = "MIT"
 
 [lib]
-name = "dglr"
+name = "solvent"
 path = "src/lib.rs"
 
 [dependencies]

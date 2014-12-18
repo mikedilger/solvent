@@ -1,9 +1,11 @@
-# dglr
-A Dependency Graph Library written in Rust.
+# solvent
+Dependency Resolver library
 
-It helps you resolve dependency orderings by building up a dependency graph
-and resolving the in-order dependences of some target node.  It is currently
-quite simple, but useful.
+Solvent helps you to resolve dependency orderings by building up a dependency
+graph and then resolving the dependences of some target node in an order such
+that each output depends only upon the previous outputs.
+
+It is currently quite simple, but is still useful.
 
 ## Example
 You can use it like this:
@@ -49,12 +51,12 @@ The above program would output `b e c a`.
 These kinds of calculations are useful in the following example situations:
 * System package management: packages depending on other packages
 * Build systems such as 'make' or 'cargo' to handle dependencies
-  (note: neither cargo nor rustc use dglr)
+  (note: neither cargo nor rustc use solvent)
 * Complex software configurations such as Linux kernel configurations
 * Database schema upgrades which don't need to be strictly sequential
   (e.g. multiple developers working on separate git branches being able
   to commit database schema upgrades independently, without merge
-  conflicts) -- the author wrote dlgr for this purpose.
+  conflicts) -- the author wrote solvent for this purpose.
 
 ## Other Details
 While elements (nodes) are registered as slices (&str) and slices of
@@ -67,7 +69,7 @@ it will always yield the same one.
 
 Circular dependency graphs are detected and will cause a `panic!`
 
-dglr does not yet handle boolean logic, e.g. `A` depends on `!B || B && !D`
+Solvent does not yet handle boolean logic, e.g. `A` depends on `!B || B && !D`
 but it is my intention to support boolean logic eventually, and I've worked
 out how to do it in my head.  But as I haven't needed it for my schema
 upgrade situation, I just haven't gotten around to it yet.

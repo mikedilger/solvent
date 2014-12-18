@@ -1,6 +1,6 @@
 // Dependency Graph Library in Rust
 
-//! dglr is a Dependency Graph Library in Rust.
+//! Solvent is a Dependency Graph Library in Rust.
 //! In short, you register elements (nodes) and their dependencies,
 //! set a target element, and then an iterator will give you a set
 //! of elements in an order that satisfies the dependency requirement
@@ -34,12 +34,12 @@
 //! ```
 //!
 //! The algorithm is deterministic, so while multiple sequences may
-//! satify the dependency requirements, dglr will always answer with
+//! satify the dependency requirements, solvent will always answer with
 //! the same one.
 //!
 //! Dependency cycles are detected and cause a panic!()
 
-#![crate_name = "dglr"]
+#![crate_name = "solvent"]
 #![crate_type = "lib"]
 
 // Required for log and rustdoc:
@@ -219,7 +219,7 @@ impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
 }
 
 #[test]
-fn dglr_test_branching() {
+fn solvent_test_branching() {
     let mut depgraph: DepGraph = DepGraph::new();
 
     depgraph.register_dependencies("a",&["b","c","d"]);
@@ -266,7 +266,7 @@ fn dglr_test_branching() {
 }
 
 #[test]
-fn dglr_test_satisfying() {
+fn solvent_test_satisfying() {
     let mut depgraph: DepGraph = DepGraph::new();
 
     depgraph.register_dependencies("a",&["b","c","d"]);
@@ -292,7 +292,7 @@ fn dglr_test_satisfying() {
 }
 
 #[test]
-fn dglr_test_circular() {
+fn solvent_test_circular() {
 
     let task_result = task::try(move|| {
         let mut depgraph: DepGraph = DepGraph::new();
@@ -324,7 +324,7 @@ fn dglr_test_circular() {
 }
 
 #[test]
-fn dglr_test_satisfied_stoppage() {
+fn solvent_test_satisfied_stoppage() {
 
     let mut depgraph: DepGraph = DepGraph::new();
     depgraph.register_dependencies("superconn", []);
