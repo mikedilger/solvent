@@ -1,21 +1,43 @@
 // Dependency Graph Library in Rust
 
 //! dglr is a Dependency Graph Library in Rust.
-//! In short, you register elements and their dependencies, and then
-//! ask for the dependencies of any element in an order that satisfies.
+//! In short, you register elements (nodes) and their dependencies,
+//! set a target element, and then an iterator will give you a set
+//! of elements in an order that satisfies the dependency requirement
+//! of the target you specified.
 //!
-//! Elements are simply &str strings.  You register them with
+//! Elements are registered as &str strings.  You register them with
 //! register_dependency() or register_dependencies().
 //!
 //! Dependenies are (currently) just a list of other elements that
-//! the element in question depends on.  [In the future, we may add
-//! boolean logic, but currently they are all AND-ed together].
+//! the element in question depends on.  These are considered AND-ed
+//! together.  Full boolean logic will be supported in the future.
 //!
-//! Then iterate over .iter() to get the ordered dependencies, and
-//! the library does the magic and returns an order which will work.
-//! It is possible that other orders also work, but the library's
-//! algorithm is deterministic, so you'll always get the same
-//! particular one.
+//! ```rust
+//!  let mut depgraph: DepGraph = DepGraph::new();
+//!  depgraph.register_dependencies("a",&["b","c","d"]);
+//!  depgraph.register_dependency("b","d");
+//!  depgraph.register_dependencies("c",&["e"]);
+//!  depgraph.set_target("a");
+//!  for node in depgraph.satisfying_iter() {
+//!      print!("{} ", node);
+//!  }
+//! ```
+//!
+//! The above will output:  ```d b e c a```
+//!
+//! You can also mark some elements as already satisfied, and the
+//! iterator will take that into account.
+//!
+//! ```
+//! depgraph.mark_as_satisfied(["e","c"]);
+//! ```
+//!
+//! The algorithm is deterministic, so while multiple sequences may
+//! satify the dependency requirements, dglr will always answer with
+//! the same one.
+//!
+//! Dependency cycles are detected and cause a panic!()
 
 #![crate_name = "dglr"]
 #![crate_type = "lib"]
@@ -32,9 +54,9 @@ use std::iter::{Iterator};
 #[allow(unused_imports)]
 use std::task;
 
-/// This is the dependency graph.  You can create it yourself, or
-/// use the convenience methods of new(), register_dependency() and
-/// register_dependencies() to build one up (that must be mutable).
+/// This is the dependency graph.  It must be mutable, as the
+/// library uses internal properties in the graph to do its
+/// calculations.
 pub struct DepGraph {
     /// List of dependencies.  Key is the element, values are the
     /// other elements that the key element depends upon.
@@ -50,9 +72,13 @@ pub struct DepGraph {
     curpath: HashSet<String>,
 }
 
+/// This iterates through the dependencies of the DepGraph's target
 pub struct DepGraphIterator<'a> {
     depgraph: &'a mut DepGraph
 }
+
+/// This iterates through the dependencies of the DepGraph's target,
+/// marking each element as satisfied as it is visited.
 pub struct DepGraphSatisfyingIterator<'a> {
     depgraph: &'a mut DepGraph
 }
@@ -70,59 +96,63 @@ impl DepGraph {
         }
     }
 
-    /// Add a dependency to a DepGraph.  The thing does not need
-    /// to pre-exist, nor do the dependency elements.  But if the
-    /// thing does pre-exist, the depends_on will be added to its
+    /// Add a dependency to a DepGraph.  The node does not need
+    /// to pre-exist, nor do the dependency nodes.  But if the
+    /// node does pre-exist, the depends_on will be added to its
     /// existing dependency list.
     pub fn register_dependency<'a>( &mut self,
-                                thing: &'a str,
+                                node: &'a str,
                                 depends_on: &'a str )
     {
-        match self.dependencies.entry( String::from_str(thing) ) {
+        match self.dependencies.entry( String::from_str(node) ) {
             Vacant(entry) => { entry.set( vec![String::from_str(depends_on)] ); },
             Occupied(mut entry) => { (*entry.get_mut()).push(String::from_str(depends_on)); },
         }
     }
 
-    /// Add multiple dependencies of one thing to a DepGraph.  The
-    /// thing does not need to pre-exist, nor do the dependency elements.
-    /// But if the thing does pre-exist, the depends_on will be added
+    /// Add multiple dependencies of one node to a DepGraph.  The
+    /// node does not need to pre-exist, nor do the dependency elements.
+    /// But if the node does pre-exist, the depends_on will be added
     /// to its existing dependency list.
     pub fn register_dependencies<'a>( &mut self,
-                                  thing: &'a str,
+                                  node: &'a str,
                                   depends_on: &'a[&'a str] )
     {
         let newvec: Vec<String> = depends_on.iter().map(
             |s| String::from_str(*s)).collect();
 
-        match self.dependencies.entry( String::from_str(thing) ) {
+        match self.dependencies.entry( String::from_str(node) ) {
             Vacant(entry) => { entry.set( newvec.clone() ); },
             Occupied(mut entry) => { (*entry.get_mut()).push_all(newvec.as_slice()); },
         }
     }
 
+    /// This sets the target node.  Iteratators on the graph always
+    /// get the dependencies of the target node.
     pub fn set_target<'a>( &mut self, target: &'a str )
     {
         self.target = Some(String::from_str(target));
     }
 
+    /// This marks a node as satisfied.  Iterators will not output
+    /// such nodes.
     pub fn mark_as_satisfied<'a>( &mut self,
-                                   things: &'a[&'a str] )
+                                   nodes: &'a[&'a str] )
     {
-        for thing in things.iter() {
-            self.satisfied.insert(String::from_str(*thing));
+        for node in nodes.iter() {
+            self.satisfied.insert(String::from_str(*node));
         }
     }
 
-    fn get_next_dependency(&mut self, thing: &String) -> String
+    fn get_next_dependency(&mut self, node: &String) -> String
     {
-        if self.curpath.contains(thing) {
-            panic!("Circular dependency graph at {}",thing);
+        if self.curpath.contains(node) {
+            panic!("Circular dependency graph at {}",node);
         }
-        self.curpath.insert(thing.clone());
+        self.curpath.insert(node.clone());
 
-        let deplist = match self.dependencies.get(thing) {
-            None => return thing.clone(),
+        let deplist = match self.dependencies.get(node) {
+            None => return node.clone(),
             Some(deplist) => deplist.clone() // ouch
         };
 
@@ -132,10 +162,12 @@ impl DepGraph {
             }
             return self.get_next_dependency(n);
         }
-        // things dependencies are satisfied
-        thing.clone()
+        // nodes dependencies are satisfied
+        node.clone()
     }
 
+    /// Get an iterator to iterate through the dependencies of
+    /// the target node
     pub fn iter<'a>(&'a mut self) -> DepGraphIterator<'a>
     {
         DepGraphIterator {
@@ -143,6 +175,9 @@ impl DepGraph {
         }
     }
 
+    /// Get an iterator to iterate through the dependencies of
+    /// the target node, and also to mark those dependencies as
+    /// satisfied as it goes.
     pub fn satisfying_iter<'a>(&'a mut self) -> DepGraphSatisfyingIterator<'a>
     {
         DepGraphSatisfyingIterator {
@@ -154,30 +189,30 @@ impl DepGraph {
 impl<'a> Iterator<String> for DepGraphIterator<'a> {
     fn next(&mut self) -> Option<String>
     {
-        let thing = match self.depgraph.target {
+        let node = match self.depgraph.target {
             None => return None,
-            Some(ref thing) => thing.clone()
+            Some(ref node) => node.clone()
         };
-        if self.depgraph.satisfied.contains(&thing) {
+        if self.depgraph.satisfied.contains(&node) {
             return None;
         }
         self.depgraph.curpath.clear();
-        Some(self.depgraph.get_next_dependency(&thing))
+        Some(self.depgraph.get_next_dependency(&node))
     }
 }
 
 impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
     fn next(&mut self) -> Option<String>
     {
-        let thing = match self.depgraph.target {
+        let node = match self.depgraph.target {
             None => return None,
-            Some(ref thing) => thing.clone()
+            Some(ref node) => node.clone()
         };
-        if self.depgraph.satisfied.contains(&thing) {
+        if self.depgraph.satisfied.contains(&node) {
             return None;
         }
         self.depgraph.curpath.clear();
-        let next = self.depgraph.get_next_dependency(&thing);
+        let next = self.depgraph.get_next_dependency(&node);
         self.depgraph.mark_as_satisfied(&[next.as_slice()]);
         Some(next)
     }
@@ -205,12 +240,12 @@ fn dglr_test_branching() {
         // detect infinite looping bugs
         assert!(results.len() < 30);
 
-        let thing = match depgraph.iter().next() {
+        let node = match depgraph.iter().next() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied([thing.as_slice()]);
-        results.push(thing);
+        depgraph.mark_as_satisfied([node.as_slice()]);
+        results.push(node);
     }
 
     assert!( results == vec![String::from_str("d"),
@@ -242,10 +277,10 @@ fn dglr_test_satisfying() {
 
     let mut results: Vec<String> = Vec::new();
 
-    for thing in depgraph.satisfying_iter() {
+    for node in depgraph.satisfying_iter() {
         // detect infinite looping bugs
         assert!(results.len() < 30);
-        results.push(thing);
+        results.push(node);
     }
 
     assert!( results == vec![String::from_str("d"),
@@ -274,12 +309,12 @@ fn dglr_test_circular() {
             // move|| means failed test!)
             if results.len() >= 30 { break; }
 
-            let thing = match depgraph.iter().next() {
+            let node = match depgraph.iter().next() {
                 Some(x) => x,
                 None => break,
             };
-            depgraph.mark_as_satisfied([thing.as_slice()]);
-            results.push(thing);
+            depgraph.mark_as_satisfied([node.as_slice()]);
+            results.push(node);
         }
     });
     match task_result {
@@ -311,12 +346,12 @@ fn dglr_test_satisfied_stoppage() {
     loop {
         assert!(results.len() < 30);
 
-        let thing = match depgraph.iter().next() {
+        let node = match depgraph.iter().next() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied([thing.as_slice()]);
-        results.push(thing);
+        depgraph.mark_as_satisfied([node.as_slice()]);
+        results.push(node);
     }
     assert!( !results.contains(&String::from_str("superconn")) );
 }
