@@ -3,6 +3,7 @@ name = "solvent"
 version = "0.1.0"
 authors = [ "mike@mikedilger.com" ]
 description = "Dependency Resolver library"
+repository = "https://github.com/mikedilger/solvent"
 readme = "README.md"
 keywords = [ "dependency", "graph", "solver", "resolver" ]
 license = "MIT"
