@@ -9,7 +9,7 @@ license = "MIT"
 
 [lib]
 name = "dglr"
-path = "src/dglr.rs"
+path = "src/lib.rs"
 
 [dependencies]
 log = "*"
