@@ -259,7 +259,7 @@ fn dglr_test_satisfying() {
 #[test]
 fn dglr_test_circular() {
 
-    let task_result = task::try(proc() {
+    let task_result = task::try(move|| {
         let mut depgraph: DepGraph = DepGraph::new();
         depgraph.register_dependency("a","b");
         depgraph.register_dependency("b","c");
@@ -271,7 +271,7 @@ fn dglr_test_circular() {
         loop {
             // Detect infinite looping bugs by
             // breaking out successfully (successful
-            // proc() means failed test!)
+            // move|| means failed test!)
             if results.len() >= 30 { break; }
 
             let thing = match depgraph.iter().next() {
