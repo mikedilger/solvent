@@ -1,7 +1,9 @@
 # dglr
 A Dependency Graph Library written in Rust.
 
-It is currently quite simple, but useful.
+It helps you resolve dependency orderings by building up a dependency graph
+and resolving the in-order dependences of some target node.  It is currently
+quite simple, but useful.
 
 ## Example
 You can use it like this:
@@ -65,12 +67,19 @@ it will always yield the same one.
 
 Circular dependency graphs are detected and will cause a `panic!`
 
-dglr does not yet handle boolean logic, e.g. `A` depends on `(!B || (B && !D))`
+dglr does not yet handle boolean logic, e.g. `A` depends on `!B || B && !D`
 but it is my intention to support boolean logic eventually, and I've worked
 out how to do it in my head.  But as I haven't needed it for my schema
 upgrade situation, I just haven't gotten around to it yet.
 
 ### TODO
-* boolean logic
-* optional dependencies and dependency filtering
-* compare to cargo/core/resolver/mod.rs
+* Boolean logic: A depends on !B || B && !D  (disjunctive normal form will
+  likely be required at first)
+* Node versioning, or the ability for library consumers to more easily
+  manage node version such as gcc-4.7.4, gcc-4.8.3, gcc-4.9.2.
+* Dependency filtering
+* Compare to others:
+** cargo/core/resolver/mod.rs
+** PHP compoer's libsolver
+** yum depsolve
+** depresolve.go
