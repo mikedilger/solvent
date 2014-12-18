@@ -1,11 +1,13 @@
-[project]
-
+[package]
 name = "dglr"
 version = "0.1.0"
 authors = [ "mike@mikedilger.com" ]
+description = "Dependency Graph Library in Rust"
+readme = "README.md"
+keywords = [ "dependency", "graph" ]
+license = "MIT"
 
 [lib]
-
 name = "dglr"
 path = "src/dglr.rs"
 
