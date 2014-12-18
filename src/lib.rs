@@ -182,7 +182,9 @@ impl DepGraph {
     }
 
     /// Get an iterator to iterate through the dependencies of
-    /// the target node
+    /// the target node.  This iter() will loop forever if you dont
+    /// mark nodes satisfied as you go.  If you want the iterator
+    /// to take care of that, use satisfying_iter()
     pub fn iter<'a>(&'a mut self) -> DepGraphIterator<'a>
     {
         DepGraphIterator {
