@@ -1,43 +1,58 @@
-// Dependency Graph Library in Rust
-
-//! Solvent is a Dependency Graph Library in Rust.
-//! In short, you register elements (nodes) and their dependencies,
-//! set a target element, and then an iterator will give you a set
-//! of elements in an order that satisfies the dependency requirement
-//! of the target you specified.
+//! Solvent is a dependency resolver library written in rust.
 //!
-//! Elements are registered as &str strings.  You register them with
-//! register_dependency() or register_dependencies().
+//! Solvent helps you to resolve dependency orderings by building up a dependency
+//! graph and then resolving the dependences of some target node in an order such
+//! that each output depends only upon the previous outputs.
 //!
-//! Dependenies are (currently) just a list of other elements that
-//! the element in question depends on.  These are considered AND-ed
-//! together.  Full boolean logic will be supported in the future.
+//! It is currently quite simple, but is still useful.
+//!
+//! #Example
 //!
 //! ```rust
-//!  let mut depgraph: DepGraph = DepGraph::new();
-//!  depgraph.register_dependencies("a",&["b","c","d"]);
-//!  depgraph.register_dependency("b","d");
-//!  depgraph.register_dependencies("c",&["e"]);
-//!  depgraph.set_target("a");
-//!  for node in depgraph.satisfying_iter() {
-//!      print!("{} ", node);
-//!  }
+//! extern crate solvent;
+//!
+//! use solvent::DepGraph;
+//!
+//! fn main() {
+//!     // Create a new empty DepGraph.  Must be `mut` or else it cannot
+//!     // be used by the rest of the library.
+//!     let mut depgraph: DepGraph = DepGraph::new();
+//!
+//!     // You can register a dependency like this.  Solvent will
+//!     // automatically create nodes for any term it has not seen before.
+//!     // This means 'b' depends on 'd'
+//!     depgraph.register_dependency("b","d");
+//!
+//!     // You can also register multiple dependencies at once
+//!     depgraph.register_dependencies("a",&["b","c","d"]);
+//!     depgraph.register_dependencies("c",&["e"]);
+//!
+//!     // You must set a target to resolve the dependencies of that target
+//!     depgraph.set_target("a");
+//!
+//!     // Iterate through each dependency.  The dependencies will be returned
+//!     // in an order such that each output only depends on the previous
+//!     // outputs (or nothing).  The target itself will be output last.
+//!     for node in depgraph.satisfying_iter() {
+//!         print!("{} ", node);
+//!     }
+//! }
 //! ```
 //!
-//! The above will output:  ```d b e c a```
+//! The above will output:  `d b e c a`
 //!
 //! You can also mark some elements as already satisfied, and the
-//! iterator will take that into account.
+//! iterator will take that into account:
 //!
-//! ```
+//! ```ignore
 //! depgraph.mark_as_satisfied(["e","c"]);
 //! ```
 //!
 //! The algorithm is deterministic, so while multiple sequences may
-//! satify the dependency requirements, solvent will always answer with
-//! the same one.
+//! satisfy the dependency requirements, solvent will always yield the
+//! same answer.
 //!
-//! Dependency cycles are detected and cause a panic!()
+//! Dependency cycles are detected and will cause a panic!()
 
 #![crate_name = "solvent"]
 #![crate_type = "lib"]
@@ -187,6 +202,7 @@ impl DepGraph {
 }
 
 impl<'a> Iterator<String> for DepGraphIterator<'a> {
+    /// Get next dependency.  This may panic!() if a cycle is detected.
     fn next(&mut self) -> Option<String>
     {
         let node = match self.depgraph.target {
@@ -202,6 +218,7 @@ impl<'a> Iterator<String> for DepGraphIterator<'a> {
 }
 
 impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
+    /// Get next dependency.  This may panic!() if a cycle is detected.
     fn next(&mut self) -> Option<String>
     {
         let node = match self.depgraph.target {
@@ -244,7 +261,7 @@ fn solvent_test_branching() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied([node.as_slice()]);
+        depgraph.mark_as_satisfied(&[node.as_slice()]);
         results.push(node);
     }
 
@@ -313,7 +330,7 @@ fn solvent_test_circular() {
                 Some(x) => x,
                 None => break,
             };
-            depgraph.mark_as_satisfied([node.as_slice()]);
+            depgraph.mark_as_satisfied(&[node.as_slice()]);
             results.push(node);
         }
     });
@@ -327,19 +344,19 @@ fn solvent_test_circular() {
 fn solvent_test_satisfied_stoppage() {
 
     let mut depgraph: DepGraph = DepGraph::new();
-    depgraph.register_dependencies("superconn", []);
-    depgraph.register_dependencies("owneruser", ["superconn"]);
-    depgraph.register_dependencies("appuser", ["superconn"]);
-    depgraph.register_dependencies("database", ["owneruser"]);
-    depgraph.register_dependencies("ownerconn", ["database","owneruser"]);
-    depgraph.register_dependencies("adminconn", ["database"]);
-    depgraph.register_dependencies("extensions", ["database","adminconn"]);
-    depgraph.register_dependencies("schema_table", ["database","ownerconn"]);
-    depgraph.register_dependencies("schemas", ["ownerconn","extensions","schema_table","appuser"]);
-    depgraph.register_dependencies("appconn", ["database","appuser","schemas"]);
+    depgraph.register_dependencies("superconn", &[]);
+    depgraph.register_dependencies("owneruser", &["superconn"]);
+    depgraph.register_dependencies("appuser", &["superconn"]);
+    depgraph.register_dependencies("database", &["owneruser"]);
+    depgraph.register_dependencies("ownerconn", &["database","owneruser"]);
+    depgraph.register_dependencies("adminconn", &["database"]);
+    depgraph.register_dependencies("extensions", &["database","adminconn"]);
+    depgraph.register_dependencies("schema_table", &["database","ownerconn"]);
+    depgraph.register_dependencies("schemas", &["ownerconn","extensions","schema_table","appuser"]);
+    depgraph.register_dependencies("appconn", &["database","appuser","schemas"]);
 
     depgraph.set_target("appconn");
-    depgraph.mark_as_satisfied(["owneruser","appuser"]);
+    depgraph.mark_as_satisfied(&["owneruser","appuser"]);
 
     let mut results: Vec<String> = Vec::new();
 
@@ -350,7 +367,7 @@ fn solvent_test_satisfied_stoppage() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied([node.as_slice()]);
+        depgraph.mark_as_satisfied(&[node.as_slice()]);
         results.push(node);
     }
     assert!( !results.contains(&String::from_str("superconn")) );

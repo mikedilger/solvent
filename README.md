@@ -1,5 +1,5 @@
 # solvent
-Dependency Resolver library
+Solvent is a dependency resolver library written in rust.
 
 Solvent helps you to resolve dependency orderings by building up a dependency
 graph and then resolving the dependences of some target node in an order such
@@ -8,44 +8,52 @@ that each output depends only upon the previous outputs.
 It is currently quite simple, but is still useful.
 
 ## Example
-You can use it like this:
-
-1. Create a DepGraph
 
 ```rust
-let mut depgraph: DepGraph = DepGraph::new();
-```
+extern crate solvent;
 
-2. Register dependencies (nodes, and the nodes they depend on)
+use solvent::DepGraph;
 
-```rust
-depgraph.register_dependencies("a",&["b","c","d"]);
-depgraph.register_dependency("b","d");
-depgraph.register_dependencies("c",&["e"]);
-```
+fn main() {
+    // Create a new empty DepGraph.  Must be `mut` or else it cannot
+    // be used by the rest of the library.
+    let mut depgraph: DepGraph = DepGraph::new();
 
-3. (optionally) mark some nodes as satisfied
+    // You can register a dependency like this.  Solvent will
+    // automatically create nodes for any term it has not seen before.
+    // This means 'b' depends on 'd'
+    depgraph.register_dependency("b","d");
 
-```rust
-depgraph.mark_as_satisfied(["d"]);
-```
+    // You can also register multiple dependencies at once
+    depgraph.register_dependencies("a",&["b","c","d"]);
+    depgraph.register_dependencies("c",&["e"]);
 
-4. Set a target node (the thing you want to get the dependencies of)
+    // You must set a target to resolve the dependencies of that target
+    depgraph.set_target("a");
 
-```rust
-depgraph.set_target("a");
-```
-
-5. Iterate through the graph, and you will get in-order dependencies of the
-   target.
-
-```rust
-for node in depgraph.satisfying_iter() {
-    print!("{} ", node);
+    // Iterate through each dependency.  The dependencies will be returned
+    // in an order such that each output only depends on the previous
+    // outputs (or nothing).  The target itself will be output last.
+    for node in depgraph.satisfying_iter() {
+        print!("{} ", node);
+    }
 }
 ```
 
-The above program would output `b e c a`.
+The above will output:  `d b e c a`
+
+You can also mark some elements as already satisfied, and the
+iterator will take that into account:
+
+```ignore
+depgraph.mark_as_satisfied(["e","c"]);
+```
+
+The algorithm is deterministic, so while multiple sequences may
+satisfy the dependency requirements, solvent will always yield the
+same answer.
+
+Dependency cycles are detected and will cause a panic!()
 
 ## Use Cases
 These kinds of calculations are useful in the following example situations:
@@ -63,11 +71,6 @@ While elements (nodes) are registered as slices (&str) and slices of
 slices (&[&str]), these borrows do not persist beyond the lifetime of
 the register function call, as they are internally copied into Strings
 and Vecs (and HashMaps).
-
-The algorithm is determinstic.  Even if multiple correct answers exist,
-it will always yield the same one.
-
-Circular dependency graphs are detected and will cause a `panic!`
 
 Solvent does not yet handle boolean logic, e.g. `A` depends on `!B || B && !D`
 but it is my intention to support boolean logic eventually, and I've worked
