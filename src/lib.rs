@@ -174,28 +174,6 @@ impl DepGraph {
         }
     }
 
-    fn get_next_dependency(&mut self, node: &String, curpath: &mut HashSet<String>) -> String
-    {
-        if curpath.contains(node) {
-            panic!("Circular dependency graph at {}",node);
-        }
-        curpath.insert(node.clone());
-
-        let deplist = match self.dependencies.get(node) {
-            None => return node.clone(),
-            Some(deplist) => deplist.clone() // ouch
-        };
-
-        for n in deplist.iter() {
-            if self.satisfied.contains(n) {
-                continue;
-            }
-            return self.get_next_dependency(n, curpath);
-        }
-        // nodes dependencies are satisfied
-        node.clone()
-    }
-
     /// Get an iterator to iterate through the dependencies of
     /// the target node.  This iter() will loop forever if you dont
     /// mark nodes satisfied as you go.  If you want the iterator
@@ -220,6 +198,54 @@ impl DepGraph {
     }
 }
 
+impl<'a> DepGraphIterator<'a> {
+    fn get_next_dependency(&mut self, node: &String) -> String
+    {
+        if self.curpath.contains(node) {
+            panic!("Circular dependency graph at {}",node);
+        }
+        self.curpath.insert(node.clone());
+
+        let deplist = match self.depgraph.dependencies.get(node) {
+            None => return node.clone(),
+            Some(deplist) => deplist.clone() // ouch
+        };
+
+        for n in deplist.iter() {
+            if self.depgraph.satisfied.contains(n) {
+                continue;
+            }
+            return self.get_next_dependency(n);
+        }
+        // nodes dependencies are satisfied
+        node.clone()
+    }
+}
+
+impl<'a> DepGraphSatisfyingIterator<'a> {
+    fn get_next_dependency(&mut self, node: &String) -> String
+    {
+        if self.curpath.contains(node) {
+            panic!("Circular dependency graph at {}",node);
+        }
+        self.curpath.insert(node.clone());
+
+        let deplist = match self.depgraph.dependencies.get(node) {
+            None => return node.clone(),
+            Some(deplist) => deplist.clone() // ouch
+        };
+
+        for n in deplist.iter() {
+            if self.depgraph.satisfied.contains(n) {
+                continue;
+            }
+            return self.get_next_dependency(n);
+        }
+        // nodes dependencies are satisfied
+        node.clone()
+    }
+}
+
 impl<'a> Iterator<String> for DepGraphIterator<'a> {
     /// Get next dependency.  This may panic!() if a cycle is detected.
     fn next(&mut self) -> Option<String>
@@ -232,7 +258,7 @@ impl<'a> Iterator<String> for DepGraphIterator<'a> {
             return None;
         }
         self.curpath.clear();
-        Some(self.depgraph.get_next_dependency(&node, &mut self.curpath))
+        Some(self.get_next_dependency(&node))
     }
 }
 
@@ -248,7 +274,7 @@ impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
             return None;
         }
         self.curpath.clear();
-        let next = self.depgraph.get_next_dependency(&node, &mut self.curpath);
+        let next = self.get_next_dependency(&node);
         self.depgraph.mark_as_satisfied(&[next.as_slice()]);
         Some(next)
     }
