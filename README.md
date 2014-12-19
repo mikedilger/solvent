@@ -30,29 +30,28 @@ fn main() {
     depgraph.register_dependencies("a",&["b","c","d"]);
     depgraph.register_dependencies("c",&["e"]);
 
-    // You must set a target to resolve the dependencies of that target
-    depgraph.set_target("a");
-
-    // Iterate through each dependency.  The dependencies will be returned
-    // in an order such that each output only depends on the previous
-    // outputs (or nothing).  The target itself will be output last.
-    for node in depgraph.satisfying_iter() {
+    // Iterate through each dependency of "a".  The dependencies will be
+    // returned in an order such that each output only depends on the
+    // previous outputs (or nothing).  The target itself will be output
+    // last.
+    for node in depgraph.dependencies_of("a") {
         print!("{} ", node);
     }
 }
 ```
 
-The above will output:  `d b e c a`
+The above will output:  `d b e c a` or `e c d b a` or some other valid
+dependency order.
 
-You can also mark some elements as already satisfied, and the
-iterator will take that into account:
+The algorithm is not deterministic, and may give a different answer each
+time it is run.  Beware.
+
+You can also mark some elements as already satisfied, and the iterator
+will take that into account:
 
 ```ignore
 depgraph.mark_as_satisfied(["e","c"]);
 ```
-
-The algorithm is not deterministic, and may give a different answer each
-time it is run.  Beware.
 
 Dependency cycles are detected and will cause a panic!()
 

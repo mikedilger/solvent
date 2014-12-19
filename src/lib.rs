@@ -27,29 +27,28 @@
 //!     depgraph.register_dependencies("a",&["b","c","d"]);
 //!     depgraph.register_dependencies("c",&["e"]);
 //!
-//!     // You must set a target to resolve the dependencies of that target
-//!     depgraph.set_target("a");
-//!
-//!     // Iterate through each dependency.  The dependencies will be returned
-//!     // in an order such that each output only depends on the previous
-//!     // outputs (or nothing).  The target itself will be output last.
-//!     for node in depgraph.satisfying_iter() {
+//!     // Iterate through each dependency of "a".  The dependencies will be
+//!     // returned in an order such that each output only depends on the
+//!     // previous outputs (or nothing).  The target itself will be output
+//!     // last.
+//!     for node in depgraph.dependencies_of("a") {
 //!         print!("{} ", node);
 //!     }
 //! }
 //! ```
 //!
-//! The above will output:  `d b e c a`
+//! The above will output:  `d b e c a` or `e c d b a` or some other valid
+//! dependency order.
 //!
-//! You can also mark some elements as already satisfied, and the
-//! iterator will take that into account:
+//! The algorithm is not deterministic, and may give a different answer each
+//! time it is run.  Beware.
+//!
+//! You can also mark some elements as already satisfied, and the iterator
+//! will take that into account:
 //!
 //! ```ignore
 //! depgraph.mark_as_satisfied(["e","c"]);
 //! ```
-//!
-//! The algorithm is not deterministic, and may give a different answer each
-//! time it is run.  Beware.
 //!
 //! Dependency cycles are detected and will cause a panic!()
 
@@ -68,34 +67,28 @@ use std::iter::{Iterator};
 #[allow(unused_imports)]
 use std::task;
 
-/// This is the dependency graph.  It must be mutable, as the
-/// library uses internal properties in the graph to do its
-/// calculations.
+/// This is the dependency graph.
 #[deriving(Clone)]
 pub struct DepGraph {
     /// List of dependencies.  Key is the element, values are the
     /// other elements that the key element depends upon.
     pub dependencies: HashMap<String,HashSet<String>>,
 
-    // (private) target we are trying to satisfy
-    target: Option<String>,
-
-    // (private) elements already satisfied
-    satisfied: HashSet<String>,
+    /// Nodes already satisfied.  dependencies_of() will prune
+    /// dependency searches at these nodes, and not output nodes
+    /// registered here.
+    pub satisfied: HashSet<String>,
 }
 
 /// This iterates through the dependencies of the DepGraph's target
 pub struct DepGraphIterator<'a> {
-    depgraph: &'a mut DepGraph,
+    depgraph: &'a DepGraph,
 
-    // current path, for cycle detection
-    curpath: HashSet<String>
-}
+    // Target we are trying to satisfy
+    target: String,
 
-/// This iterates through the dependencies of the DepGraph's target,
-/// marking each element as satisfied as it is visited.
-pub struct DepGraphSatisfyingIterator<'a> {
-    depgraph: &'a mut DepGraph,
+    // Elements already satisfied during this iterator's walk
+    satisfied: HashSet<String>,
 
     // current path, for cycle detection
     curpath: HashSet<String>
@@ -108,7 +101,6 @@ impl DepGraph {
     {
         DepGraph {
             dependencies: HashMap::new(),
-            target: None,
             satisfied: HashSet::new(),
         }
     }
@@ -157,13 +149,6 @@ impl DepGraph {
         }
     }
 
-    /// This sets the target node.  Iteratators on the graph always
-    /// get the dependencies of the target node.
-    pub fn set_target<'a>( &mut self, target: &'a str )
-    {
-        self.target = Some(String::from_str(target));
-    }
-
     /// This marks a node as satisfied.  Iterators will not output
     /// such nodes.
     pub fn mark_as_satisfied<'a>( &mut self,
@@ -175,24 +160,16 @@ impl DepGraph {
     }
 
     /// Get an iterator to iterate through the dependencies of
-    /// the target node.  This iter() will loop forever if you dont
-    /// mark nodes satisfied as you go.  If you want the iterator
-    /// to take care of that, use satisfying_iter()
-    pub fn iter<'a>(&'a mut self) -> DepGraphIterator<'a>
+    /// the target node.
+    pub fn dependencies_of<'a>(&'a self, target: &str) -> DepGraphIterator<'a>
     {
+        // TODO: iterator's satisfied could start empty, and all checks
+        //       could separately check depgraph's and iterator's.  That
+        //       would avoid the copy.
         DepGraphIterator {
             depgraph: self,
-            curpath: HashSet::new(),
-        }
-    }
-
-    /// Get an iterator to iterate through the dependencies of
-    /// the target node, and also to mark those dependencies as
-    /// satisfied as it goes.
-    pub fn satisfying_iter<'a>(&'a mut self) -> DepGraphSatisfyingIterator<'a>
-    {
-        DepGraphSatisfyingIterator {
-            depgraph: self,
+            target: target.into_string(),
+            satisfied: self.satisfied.clone(),
             curpath: HashSet::new(),
         }
     }
@@ -212,33 +189,11 @@ impl<'a> DepGraphIterator<'a> {
         };
 
         for n in deplist.iter() {
-            if self.depgraph.satisfied.contains(n) {
+            // Prune satisfied nodes
+            if self.satisfied.contains(n) {
                 continue;
             }
-            return self.get_next_dependency(n);
-        }
-        // nodes dependencies are satisfied
-        node.clone()
-    }
-}
 
-impl<'a> DepGraphSatisfyingIterator<'a> {
-    fn get_next_dependency(&mut self, node: &String) -> String
-    {
-        if self.curpath.contains(node) {
-            panic!("Circular dependency graph at {}",node);
-        }
-        self.curpath.insert(node.clone());
-
-        let deplist = match self.depgraph.dependencies.get(node) {
-            None => return node.clone(),
-            Some(deplist) => deplist.clone() // ouch
-        };
-
-        for n in deplist.iter() {
-            if self.depgraph.satisfied.contains(n) {
-                continue;
-            }
             return self.get_next_dependency(n);
         }
         // nodes dependencies are satisfied
@@ -250,32 +205,13 @@ impl<'a> Iterator<String> for DepGraphIterator<'a> {
     /// Get next dependency.  This may panic!() if a cycle is detected.
     fn next(&mut self) -> Option<String>
     {
-        let node = match self.depgraph.target {
-            None => return None,
-            Some(ref node) => node.clone()
-        };
-        if self.depgraph.satisfied.contains(&node) {
-            return None;
-        }
-        self.curpath.clear();
-        Some(self.get_next_dependency(&node))
-    }
-}
-
-impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
-    /// Get next dependency.  This may panic!() if a cycle is detected.
-    fn next(&mut self) -> Option<String>
-    {
-        let node = match self.depgraph.target {
-            None => return None,
-            Some(ref node) => node.clone()
-        };
-        if self.depgraph.satisfied.contains(&node) {
+        let node = self.target.clone();
+        if self.satisfied.contains(&node) {
             return None;
         }
         self.curpath.clear();
         let next = self.get_next_dependency(&node);
-        self.depgraph.mark_as_satisfied(&[next.as_slice()]);
+        self.satisfied.insert(next.clone());
         Some(next)
     }
 }
@@ -294,19 +230,17 @@ fn solvent_test_branching() {
     depgraph.register_dependencies("k",&["l","m"]);
     depgraph.register_dependency("m","n");
 
-    depgraph.set_target("a");
-
     let mut results: Vec<String> = Vec::new();
+    let mut i = depgraph.dependencies_of("a");
 
     loop {
         // detect infinite looping bugs
         assert!(results.len() < 30);
 
-        let node = match depgraph.iter().next() {
+        let node = match i.next() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied(&[node.as_slice()]);
 
         // Check that all of that nodes dependencies have already been output
         let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&node);
@@ -332,34 +266,6 @@ fn solvent_test_updating_dependencies() {
 }
 
 #[test]
-fn solvent_test_satisfying() {
-    let mut depgraph: DepGraph = DepGraph::new();
-
-    depgraph.register_dependencies("a",&["b","c","d"]);
-    depgraph.register_dependency("b","d");
-    depgraph.register_dependencies("c",&["e"]);
-
-    depgraph.set_target("a");
-
-    let mut results: Vec<String> = Vec::new();
-
-    while let Some(node) = depgraph.satisfying_iter().next() {
-        // detect infinite looping bugs
-        assert!(results.len() < 30);
-
-        // Check that all of that nodes dependencies have already been output
-        let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&node);
-        if deps.is_some() {
-            for dep in deps.unwrap().iter() {
-                assert!( results.contains(dep) );
-            }
-        }
-
-        results.push(node);
-    }
-}
-
-#[test]
 #[should_fail]
 fn solvent_test_circular() {
 
@@ -367,20 +273,19 @@ fn solvent_test_circular() {
     depgraph.register_dependency("a","b");
     depgraph.register_dependency("b","c");
     depgraph.register_dependency("c","a");
-    depgraph.set_target("a");
 
     let mut results: Vec<String> = Vec::new();
+    let mut i = depgraph.dependencies_of("a");
 
     loop {
         // Detect infinite looping bugs
         // (Since this test should fail, we cause a success here)
         if results.len() >= 30 { break; }
 
-        let node = match depgraph.iter().next() {
+        let node = match i.next() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied(&[node.as_slice()]);
         results.push(node);
     }
 }
@@ -400,19 +305,19 @@ fn solvent_test_satisfied_stoppage() {
     depgraph.register_dependencies("schemas", &["ownerconn","extensions","schema_table","appuser"]);
     depgraph.register_dependencies("appconn", &["database","appuser","schemas"]);
 
-    depgraph.set_target("appconn");
     depgraph.mark_as_satisfied(&["owneruser","appuser"]);
 
     let mut results: Vec<String> = Vec::new();
 
+    let mut i = depgraph.dependencies_of("appconn");
+
     loop {
         assert!(results.len() < 30);
 
-        let node = match depgraph.iter().next() {
+        let node = match i.next() {
             Some(x) => x,
             None => break,
         };
-        depgraph.mark_as_satisfied(&[node.as_slice()]);
         results.push(node);
     }
     assert!( !results.contains(&String::from_str("superconn")) );
