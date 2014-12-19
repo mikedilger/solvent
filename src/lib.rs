@@ -291,6 +291,17 @@ fn solvent_test_branching() {
 }
 
 #[test]
+fn solvent_test_updating_dependencies() {
+    let mut depgraph: DepGraph = DepGraph::new();
+
+    depgraph.register_dependencies("a",&["b","c"]);
+    depgraph.register_dependency("a","d");
+    assert!(depgraph.dependencies.get("a").unwrap().contains("b"));
+    assert!(depgraph.dependencies.get("a").unwrap().contains("c"));
+    assert!(depgraph.dependencies.get("a").unwrap().contains("d"));
+}
+
+#[test]
 fn solvent_test_satisfying() {
     let mut depgraph: DepGraph = DepGraph::new();
 
@@ -386,3 +397,4 @@ fn solvent_test_satisfied_stoppage() {
     }
     assert!( !results.contains(&String::from_str("superconn")) );
 }
+
