@@ -80,6 +80,12 @@ pub struct DepGraph {
     pub satisfied: HashSet<String>,
 }
 
+#[deriving(Copy,Show,PartialEq)]
+pub enum SolventError {
+    CycleDetected,
+    // TODO once we implement conflicts: Conflict(String)
+}
+
 /// This iterates through the dependencies of the DepGraph's target
 pub struct DepGraphIterator<'a> {
     depgraph: &'a DepGraph,
@@ -90,8 +96,11 @@ pub struct DepGraphIterator<'a> {
     // Elements already satisfied during this iterator's walk
     satisfied: HashSet<String>,
 
-    // current path, for cycle detection
-    curpath: HashSet<String>
+    // Current path, for cycle detection
+    curpath: HashSet<String>,
+
+    // Halted.  Used so that it can return None after an Err is returned.
+    halted: bool,
 }
 
 impl DepGraph {
@@ -171,20 +180,22 @@ impl DepGraph {
             target: target.into_string(),
             satisfied: self.satisfied.clone(),
             curpath: HashSet::new(),
+            halted: false,
         }
     }
 }
 
 impl<'a> DepGraphIterator<'a> {
-    fn get_next_dependency(&mut self, node: &String) -> String
+
+    fn get_next_dependency(&mut self, node: &String) -> Result<String,SolventError>
     {
         if self.curpath.contains(node) {
-            panic!("Circular dependency graph at {}",node);
+            return Err(SolventError::CycleDetected);
         }
         self.curpath.insert(node.clone());
 
         let deplist = match self.depgraph.dependencies.get(node) {
-            None => return node.clone(),
+            None => return Ok(node.clone()),
             Some(deplist) => deplist.clone() // ouch
         };
 
@@ -197,22 +208,35 @@ impl<'a> DepGraphIterator<'a> {
             return self.get_next_dependency(n);
         }
         // nodes dependencies are satisfied
-        node.clone()
+        Ok(node.clone())
     }
 }
 
-impl<'a> Iterator<String> for DepGraphIterator<'a> {
-    /// Get next dependency.  This may panic!() if a cycle is detected.
-    fn next(&mut self) -> Option<String>
+impl<'a> Iterator< Result<String,SolventError> > for DepGraphIterator<'a> {
+    /// Get next dependency.  Returns None when finished.  You should
+    /// always check the error status with get_error(), because it also
+    /// returns None if an error occurred.
+    fn next(&mut self) -> Option< Result<String,SolventError> >
     {
+        if self.halted {
+            return None;
+        }
+
         let node = self.target.clone();
         if self.satisfied.contains(&node) {
             return None;
         }
+
         self.curpath.clear();
-        let next = self.get_next_dependency(&node);
+        let next = match self.get_next_dependency(&node) {
+            Ok(d) => d,
+            Err(e) => {
+                self.halted = true;
+                return Some(Err(e));
+            }
+        };
         self.satisfied.insert(next.clone());
-        Some(next)
+        Some(Ok(next))
     }
 }
 
@@ -236,15 +260,17 @@ fn solvent_test_branching() {
         // detect infinite looping bugs
         assert!(results.len() < 30);
 
+        let n = node.unwrap();
+
         // Check that all of that nodes dependencies have already been output
-        let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&node);
+        let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&n);
         if deps.is_some() {
             for dep in deps.unwrap().iter() {
                 assert!( results.contains(dep) );
             }
         }
 
-        results.push(node.clone());
+        results.push(n.clone());
     }
 
     // Be sure we actually output enough stuff
@@ -272,7 +298,6 @@ fn solvent_test_updating_dependencies() {
 }
 
 #[test]
-#[should_fail]
 fn solvent_test_circular() {
 
     let mut depgraph: DepGraph = DepGraph::new();
@@ -280,15 +305,9 @@ fn solvent_test_circular() {
     depgraph.register_dependency("b","c");
     depgraph.register_dependency("c","a");
 
-    let mut results: Vec<String> = Vec::new();
-
     for node in depgraph.dependencies_of("a") {
-        // Detect infinite looping bugs
-        if results.len() >= 30 {
-            // Since this test should fail, we cause a success here:
-            break;
-        }
-        results.push(node);
+        assert!(node.is_err());
+        assert!(node.unwrap_err() == SolventError::CycleDetected);
     }
 }
 
@@ -313,7 +332,7 @@ fn solvent_test_satisfied_stoppage() {
 
     for node in depgraph.dependencies_of("appconn") {
         assert!(results.len() < 30);
-        results.push(node);
+        results.push(node.unwrap());
     }
 
     // Be sure we did not depend on these
