@@ -35,7 +35,7 @@ fn main() {
     // previous outputs (or nothing).  The target itself will be output
     // last.
     for node in depgraph.dependencies_of("a") {
-        print!("{} ", node);
+        print!("{} ", node.unwrap());
     }
 }
 ```
@@ -46,6 +46,11 @@ dependency order.
 The algorithm is not deterministic, and may give a different answer each
 time it is run.  Beware.
 
+The iterator dependencies_of() returns an Option<Result<String,SolventError>>.
+The for loop handles the Option part for you, but you may want to check the
+result for SolventErrors.  Once an error is returned, all subsequent calls to
+the iterator next() will yield None.
+
 You can also mark some elements as already satisfied, and the iterator
 will take that into account:
 
@@ -53,7 +58,7 @@ will take that into account:
 depgraph.mark_as_satisfied(["e","c"]);
 ```
 
-Dependency cycles are detected and will cause a panic!()
+Dependency cycles are detected and will return SolventError::CycleDetected.
 
 ## Use Cases
 These kinds of calculations are useful in the following example situations:
