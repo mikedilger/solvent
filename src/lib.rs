@@ -311,18 +311,14 @@ fn solvent_test_satisfying() {
 
     depgraph.set_target("a");
 
-    // To get past the borrow checker, we make a copy of the dependencies.
-    // This is a test, and performance is not important here.
-    let dependency_copy = depgraph.dependencies.clone();
-
     let mut results: Vec<String> = Vec::new();
 
-    for node in depgraph.satisfying_iter() {
+    while let Some(node) = depgraph.satisfying_iter().next() {
         // detect infinite looping bugs
         assert!(results.len() < 30);
 
         // Check that all of that nodes dependencies have already been output
-        let deps: Option<&HashSet<String>> = dependency_copy.get(&node);
+        let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&node);
         if deps.is_some() {
             for dep in deps.unwrap().iter() {
                 assert!( results.contains(dep) );
