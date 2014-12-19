@@ -334,35 +334,29 @@ fn solvent_test_satisfying() {
 }
 
 #[test]
+#[should_fail]
 fn solvent_test_circular() {
 
-    let task_result = task::try(move|| {
-        let mut depgraph: DepGraph = DepGraph::new();
-        depgraph.register_dependency("a","b");
-        depgraph.register_dependency("b","c");
-        depgraph.register_dependency("c","a");
-        depgraph.set_target("a");
+    let mut depgraph: DepGraph = DepGraph::new();
+    depgraph.register_dependency("a","b");
+    depgraph.register_dependency("b","c");
+    depgraph.register_dependency("c","a");
+    depgraph.set_target("a");
 
-        let mut results: Vec<String> = Vec::new();
+    let mut results: Vec<String> = Vec::new();
 
-        loop {
-            // Detect infinite looping bugs by
-            // breaking out successfully (successful
-            // move|| means failed test!)
-            if results.len() >= 30 { break; }
+    loop {
+        // Detect infinite looping bugs
+        // (Since this test should fail, we cause a success here)
+        if results.len() >= 30 { break; }
 
-            let node = match depgraph.iter().next() {
-                Some(x) => x,
-                None => break,
-            };
-            depgraph.mark_as_satisfied(&[node.as_slice()]);
-            results.push(node);
-        }
-    });
-    match task_result {
-        Ok(_) => panic!("Should have failed at the circular dependency!"),
-        Err(_) => () //info!("Successfully detected the circular dependency (ignore task failure)"),
-    };
+        let node = match depgraph.iter().next() {
+            Some(x) => x,
+            None => break,
+        };
+        depgraph.mark_as_satisfied(&[node.as_slice()]);
+        results.push(node);
+    }
 }
 
 #[test]
