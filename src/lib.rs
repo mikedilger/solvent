@@ -231,16 +231,10 @@ fn solvent_test_branching() {
     depgraph.register_dependency("m","n");
 
     let mut results: Vec<String> = Vec::new();
-    let mut i = depgraph.dependencies_of("a");
 
-    loop {
+    for node in depgraph.dependencies_of("a") {
         // detect infinite looping bugs
         assert!(results.len() < 30);
-
-        let node = match i.next() {
-            Some(x) => x,
-            None => break,
-        };
 
         // Check that all of that nodes dependencies have already been output
         let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&node);
@@ -251,6 +245,18 @@ fn solvent_test_branching() {
         }
 
         results.push(node.clone());
+    }
+
+    // Be sure we actually output enough stuff
+    assert!(results.len() == 14);
+
+    // Be sure each output is unique
+    for result in results.iter() {
+        let mut count = 0u;
+        for result2 in results.iter() {
+            if result == result2 { count = count + 1; }
+        }
+        assert!(count == 1);
     }
 }
 
@@ -275,17 +281,13 @@ fn solvent_test_circular() {
     depgraph.register_dependency("c","a");
 
     let mut results: Vec<String> = Vec::new();
-    let mut i = depgraph.dependencies_of("a");
 
-    loop {
+    for node in depgraph.dependencies_of("a") {
         // Detect infinite looping bugs
-        // (Since this test should fail, we cause a success here)
-        if results.len() >= 30 { break; }
-
-        let node = match i.next() {
-            Some(x) => x,
-            None => break,
-        };
+        if results.len() >= 30 {
+            // Since this test should fail, we cause a success here:
+            break;
+        }
         results.push(node);
     }
 }
@@ -309,17 +311,26 @@ fn solvent_test_satisfied_stoppage() {
 
     let mut results: Vec<String> = Vec::new();
 
-    let mut i = depgraph.dependencies_of("appconn");
-
-    loop {
+    for node in depgraph.dependencies_of("appconn") {
         assert!(results.len() < 30);
-
-        let node = match i.next() {
-            Some(x) => x,
-            None => break,
-        };
         results.push(node);
     }
+
+    // Be sure we did not depend on these
+    assert!( !results.contains(&String::from_str("appuser")) );
+    assert!( !results.contains(&String::from_str("owneruser")) );
     assert!( !results.contains(&String::from_str("superconn")) );
+
+    // Be sure we actually output enough stuff
+    assert!(results.len() == 7);
+
+    // Be sure each output is unique
+    for result in results.iter() {
+        let mut count = 0u;
+        for result2 in results.iter() {
+            if result == result2 { count = count + 1; }
+        }
+        assert!(count == 1);
+    }
 }
 
