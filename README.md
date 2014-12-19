@@ -51,9 +51,8 @@ iterator will take that into account:
 depgraph.mark_as_satisfied(["e","c"]);
 ```
 
-The algorithm is deterministic, so while multiple sequences may
-satisfy the dependency requirements, solvent will always yield the
-same answer.
+The algorithm is not deterministic, and may give a different answer each
+time it is run.  Beware.
 
 Dependency cycles are detected and will cause a panic!()
 

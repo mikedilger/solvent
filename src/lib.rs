@@ -48,9 +48,8 @@
 //! depgraph.mark_as_satisfied(["e","c"]);
 //! ```
 //!
-//! The algorithm is deterministic, so while multiple sequences may
-//! satisfy the dependency requirements, solvent will always yield the
-//! same answer.
+//! The algorithm is not deterministic, and may give a different answer each
+//! time it is run.  Beware.
 //!
 //! Dependency cycles are detected and will cause a panic!()
 
@@ -72,10 +71,11 @@ use std::task;
 /// This is the dependency graph.  It must be mutable, as the
 /// library uses internal properties in the graph to do its
 /// calculations.
+#[deriving(Clone)]
 pub struct DepGraph {
     /// List of dependencies.  Key is the element, values are the
     /// other elements that the key element depends upon.
-    pub dependencies: HashMap<String,Vec<String>>,
+    pub dependencies: HashMap<String,HashSet<String>>,
 
     // (private) target we are trying to satisfy
     target: Option<String>,
@@ -120,8 +120,14 @@ impl DepGraph {
                                 depends_on: &'a str )
     {
         match self.dependencies.entry( String::from_str(node) ) {
-            Vacant(entry) => { entry.set( vec![String::from_str(depends_on)] ); },
-            Occupied(mut entry) => { (*entry.get_mut()).push(String::from_str(depends_on)); },
+            Vacant(entry) => {
+                let mut deps = HashSet::with_capacity(1);
+                deps.insert( String::from_str(depends_on) );
+                entry.set( deps );
+            },
+            Occupied(mut entry) => {
+                (*entry.get_mut()).insert(String::from_str(depends_on));
+            },
         }
     }
 
@@ -133,12 +139,19 @@ impl DepGraph {
                                   node: &'a str,
                                   depends_on: &'a[&'a str] )
     {
-        let newvec: Vec<String> = depends_on.iter().map(
-            |s| String::from_str(*s)).collect();
-
         match self.dependencies.entry( String::from_str(node) ) {
-            Vacant(entry) => { entry.set( newvec.clone() ); },
-            Occupied(mut entry) => { (*entry.get_mut()).push_all(newvec.as_slice()); },
+            Vacant(entry) => {
+                let mut deps = HashSet::with_capacity( depends_on.len() );
+                for s in depends_on.iter() {
+                    deps.insert( String::from_str(*s) );
+                }
+                entry.set( deps );
+            },
+            Occupied(mut entry) => {
+                for s in depends_on.iter() {
+                    (*entry.get_mut()).insert( String::from_str(*s) );
+                }
+            },
         }
     }
 
@@ -264,24 +277,17 @@ fn solvent_test_branching() {
             None => break,
         };
         depgraph.mark_as_satisfied(&[node.as_slice()]);
-        results.push(node);
-    }
 
-    assert!( results == vec![String::from_str("d"),
-                             String::from_str("b"),
-                             String::from_str("f"),
-                             String::from_str("e"),
-                             String::from_str("n"),
-                             String::from_str("m"),
-                             String::from_str("j"),
-                             String::from_str("l"),
-                             String::from_str("k"),
-                             String::from_str("i"),
-                             String::from_str("h"),
-                             String::from_str("g"),
-                             String::from_str("c"),
-                             String::from_str("a")] );
-    //info!("Deps of a = {}",results);
+        // Check that all of that nodes dependencies have already been output
+        let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&node);
+        if deps.is_some() {
+            for dep in deps.unwrap().iter() {
+                assert!( results.contains(dep) );
+            }
+        }
+
+        results.push(node.clone());
+    }
 }
 
 #[test]
@@ -294,20 +300,26 @@ fn solvent_test_satisfying() {
 
     depgraph.set_target("a");
 
+    // To get past the borrow checker, we make a copy of the dependencies.
+    // This is a test, and performance is not important here.
+    let dependency_copy = depgraph.dependencies.clone();
+
     let mut results: Vec<String> = Vec::new();
 
     for node in depgraph.satisfying_iter() {
         // detect infinite looping bugs
         assert!(results.len() < 30);
+
+        // Check that all of that nodes dependencies have already been output
+        let deps: Option<&HashSet<String>> = dependency_copy.get(&node);
+        if deps.is_some() {
+            for dep in deps.unwrap().iter() {
+                assert!( results.contains(dep) );
+            }
+        }
+
         results.push(node);
     }
-
-    assert!( results == vec![String::from_str("d"),
-                             String::from_str("b"),
-                             String::from_str("e"),
-                             String::from_str("c"),
-                             String::from_str("a")] );
-    //info!("Deps of a = {}",results);
 }
 
 #[test]
