@@ -46,7 +46,7 @@ dependency order.
 The algorithm is not deterministic, and may give a different answer each
 time it is run.  Beware.
 
-The iterator dependencies_of() returns an Option<Result<String,SolventError>>.
+The iterator dependencies_of() returns an Option&lt;Result&lt;String,SolventError&gt;&gt;.
 The for loop handles the Option part for you, but you may want to check the
 result for SolventErrors.  Once an error is returned, all subsequent calls to
 the iterator next() will yield None.
@@ -72,8 +72,8 @@ These kinds of calculations are useful in the following example situations:
   conflicts) -- the author wrote solvent for this purpose.
 
 ## Other Details
-While elements (nodes) are registered as slices (&str) and slices of
-slices (&[&str]), these borrows do not persist beyond the lifetime of
+While elements (nodes) are registered as slices (&amp;str) and slices of
+slices (&amp;[&amp;str]), these borrows do not persist beyond the lifetime of
 the register function call, as they are internally copied into Strings
 and Vecs (and HashMaps).
 
