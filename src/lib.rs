@@ -82,20 +82,23 @@ pub struct DepGraph {
 
     // (private) elements already satisfied
     satisfied: HashSet<String>,
-
-    // (private) current path, for cycle detection
-    curpath: HashSet<String>,
 }
 
 /// This iterates through the dependencies of the DepGraph's target
 pub struct DepGraphIterator<'a> {
-    depgraph: &'a mut DepGraph
+    depgraph: &'a mut DepGraph,
+
+    // current path, for cycle detection
+    curpath: HashSet<String>
 }
 
 /// This iterates through the dependencies of the DepGraph's target,
 /// marking each element as satisfied as it is visited.
 pub struct DepGraphSatisfyingIterator<'a> {
-    depgraph: &'a mut DepGraph
+    depgraph: &'a mut DepGraph,
+
+    // current path, for cycle detection
+    curpath: HashSet<String>
 }
 
 impl DepGraph {
@@ -106,7 +109,6 @@ impl DepGraph {
         DepGraph {
             dependencies: HashMap::new(),
             target: None,
-            curpath: HashSet::new(),
             satisfied: HashSet::new(),
         }
     }
@@ -172,12 +174,12 @@ impl DepGraph {
         }
     }
 
-    fn get_next_dependency(&mut self, node: &String) -> String
+    fn get_next_dependency(&mut self, node: &String, curpath: &mut HashSet<String>) -> String
     {
-        if self.curpath.contains(node) {
+        if curpath.contains(node) {
             panic!("Circular dependency graph at {}",node);
         }
-        self.curpath.insert(node.clone());
+        curpath.insert(node.clone());
 
         let deplist = match self.dependencies.get(node) {
             None => return node.clone(),
@@ -188,7 +190,7 @@ impl DepGraph {
             if self.satisfied.contains(n) {
                 continue;
             }
-            return self.get_next_dependency(n);
+            return self.get_next_dependency(n, curpath);
         }
         // nodes dependencies are satisfied
         node.clone()
@@ -201,7 +203,8 @@ impl DepGraph {
     pub fn iter<'a>(&'a mut self) -> DepGraphIterator<'a>
     {
         DepGraphIterator {
-            depgraph: self
+            depgraph: self,
+            curpath: HashSet::new(),
         }
     }
 
@@ -211,7 +214,8 @@ impl DepGraph {
     pub fn satisfying_iter<'a>(&'a mut self) -> DepGraphSatisfyingIterator<'a>
     {
         DepGraphSatisfyingIterator {
-            depgraph: self
+            depgraph: self,
+            curpath: HashSet::new(),
         }
     }
 }
@@ -227,8 +231,8 @@ impl<'a> Iterator<String> for DepGraphIterator<'a> {
         if self.depgraph.satisfied.contains(&node) {
             return None;
         }
-        self.depgraph.curpath.clear();
-        Some(self.depgraph.get_next_dependency(&node))
+        self.curpath.clear();
+        Some(self.depgraph.get_next_dependency(&node, &mut self.curpath))
     }
 }
 
@@ -243,8 +247,8 @@ impl<'a> Iterator<String> for DepGraphSatisfyingIterator<'a> {
         if self.depgraph.satisfied.contains(&node) {
             return None;
         }
-        self.depgraph.curpath.clear();
-        let next = self.depgraph.get_next_dependency(&node);
+        self.curpath.clear();
+        let next = self.depgraph.get_next_dependency(&node, &mut self.curpath);
         self.depgraph.mark_as_satisfied(&[next.as_slice()]);
         Some(next)
     }
