@@ -46,7 +46,7 @@ dependency order.
 The algorithm is not deterministic, and may give a different answer each
 time it is run.  Beware.
 
-The iterator dependencies_of() returns an Option&lt;Result&lt;String,SolventError&gt;&gt;.
+The iterator dependencies_of() returns an `Option&lt;Result&lt;String,SolventError&gt;&gt;`.
 The for loop handles the Option part for you, but you may want to check the
 result for SolventErrors.  Once an error is returned, all subsequent calls to
 the iterator next() will yield None.
