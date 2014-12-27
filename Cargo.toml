@@ -1,6 +1,6 @@
 [package]
 name = "solvent"
-version = "0.5.1"
+version = "0.5.2"
 authors = [ "mike@mikedilger.com" ]
 description = "Dependency Resolver library"
 repository = "https://github.com/mikedilger/solvent"
