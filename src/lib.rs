@@ -67,10 +67,11 @@
 extern crate log;
 
 use std::collections::{HashMap,HashSet};
-use std::collections::hash_map::{Occupied,Vacant};
+use std::collections::hash_map::Entry;
 use std::iter::{Iterator};
 #[allow(unused_imports)]
 use std::task;
+use std::borrow::ToOwned;
 
 /// This is the dependency graph.
 #[deriving(Clone)]
@@ -128,12 +129,12 @@ impl DepGraph {
                                 depends_on: &'a str )
     {
         match self.dependencies.entry( String::from_str(node) ) {
-            Vacant(entry) => {
+            Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity(1);
                 deps.insert( String::from_str(depends_on) );
                 entry.set( deps );
             },
-            Occupied(mut entry) => {
+            Entry::Occupied(mut entry) => {
                 (*entry.get_mut()).insert(String::from_str(depends_on));
             },
         }
@@ -148,14 +149,14 @@ impl DepGraph {
                                   depends_on: &'a[&'a str] )
     {
         match self.dependencies.entry( String::from_str(node) ) {
-            Vacant(entry) => {
+            Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity( depends_on.len() );
                 for s in depends_on.iter() {
                     deps.insert( String::from_str(*s) );
                 }
                 entry.set( deps );
             },
-            Occupied(mut entry) => {
+            Entry::Occupied(mut entry) => {
                 for s in depends_on.iter() {
                     (*entry.get_mut()).insert( String::from_str(*s) );
                 }
@@ -182,7 +183,7 @@ impl DepGraph {
         //       would avoid the copy.
         DepGraphIterator {
             depgraph: self,
-            target: target.into_string(),
+            target: target.to_owned(),
             satisfied: self.satisfied.clone(),
             curpath: HashSet::new(),
             halted: false,
