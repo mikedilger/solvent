@@ -74,7 +74,7 @@ use std::task;
 use std::borrow::ToOwned;
 
 /// This is the dependency graph.
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct DepGraph {
     /// List of dependencies.  Key is the element, values are the
     /// other elements that the key element depends upon.
@@ -86,7 +86,7 @@ pub struct DepGraph {
     pub satisfied: HashSet<String>,
 }
 
-#[deriving(Copy,Show,PartialEq)]
+#[derive(Copy,Show,PartialEq)]
 pub enum SolventError {
     CycleDetected,
     // TODO once we implement conflicts: Conflict(String)
