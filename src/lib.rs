@@ -62,6 +62,7 @@
 
 // Required for log and rustdoc:
 #![feature(phase)]
+#![feature(associated_types)]
 #[phase(plugin, link)]
 
 extern crate log;
@@ -218,7 +219,9 @@ impl<'a> DepGraphIterator<'a> {
     }
 }
 
-impl<'a> Iterator< Result<String,SolventError> > for DepGraphIterator<'a> {
+impl<'a> Iterator for DepGraphIterator<'a> {
+    type Item = Result<String,SolventError>;
+
     /// Get next dependency.  Returns None when finished.  If
     /// Some(Err(SolventError)) occurs, all subsequent calls will
     /// return None.
