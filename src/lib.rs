@@ -70,8 +70,6 @@ extern crate log;
 use std::collections::{HashMap,HashSet};
 use std::collections::hash_map::Entry;
 use std::iter::{Iterator};
-#[allow(unused_imports)]
-use std::task;
 use std::borrow::ToOwned;
 
 /// This is the dependency graph.
