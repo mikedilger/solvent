@@ -127,11 +127,11 @@ impl DepGraph {
                                 node: &'a str,
                                 depends_on: &'a str )
     {
-        match self.dependencies.entry( String::from_str(node) ) {
+        match self.dependencies.entry( &String::from_str(node) ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity(1);
                 deps.insert( String::from_str(depends_on) );
-                entry.set( deps );
+                entry.insert( deps );
             },
             Entry::Occupied(mut entry) => {
                 (*entry.get_mut()).insert(String::from_str(depends_on));
@@ -147,13 +147,13 @@ impl DepGraph {
                                   node: &'a str,
                                   depends_on: &'a[&'a str] )
     {
-        match self.dependencies.entry( String::from_str(node) ) {
+        match self.dependencies.entry( &String::from_str(node) ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity( depends_on.len() );
                 for s in depends_on.iter() {
                     deps.insert( String::from_str(*s) );
                 }
-                entry.set( deps );
+                entry.insert( deps );
             },
             Entry::Occupied(mut entry) => {
                 for s in depends_on.iter() {
