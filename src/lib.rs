@@ -60,12 +60,7 @@
 #![crate_name = "solvent"]
 #![crate_type = "lib"]
 
-// Required for log and rustdoc:
-#![feature(phase)]
-#![feature(associated_types)]
-#[phase(plugin, link)]
-
-extern crate log;
+#[macro_use] extern crate log;
 
 use std::collections::{HashMap,HashSet};
 use std::collections::hash_map::Entry;
