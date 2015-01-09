@@ -122,7 +122,7 @@ impl DepGraph {
                                 node: &'a str,
                                 depends_on: &'a str )
     {
-        match self.dependencies.entry( &String::from_str(node) ) {
+        match self.dependencies.entry( String::from_str(node) ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity(1);
                 deps.insert( String::from_str(depends_on) );
@@ -142,7 +142,7 @@ impl DepGraph {
                                   node: &'a str,
                                   depends_on: &'a[&'a str] )
     {
-        match self.dependencies.entry( &String::from_str(node) ) {
+        match self.dependencies.entry( String::from_str(node) ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity( depends_on.len() );
                 for s in depends_on.iter() {
@@ -280,7 +280,7 @@ fn solvent_test_branching() {
 
     // Be sure each output is unique
     for result in results.iter() {
-        let mut count = 0u;
+        let mut count: usize = 0;
         for result2 in results.iter() {
             if result == result2 { count = count + 1; }
         }
@@ -347,7 +347,7 @@ fn solvent_test_satisfied_stoppage() {
 
     // Be sure each output is unique
     for result in results.iter() {
-        let mut count = 0u;
+        let mut count: usize = 0;
         for result2 in results.iter() {
             if result == result2 { count = count + 1; }
         }
