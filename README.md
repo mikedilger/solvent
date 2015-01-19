@@ -3,6 +3,8 @@ Solvent is a dependency resolver library written in rust.
 
 [![Build Status](https://travis-ci.org/mikedilger/solvent.svg?branch=master)](https://travis-ci.org/mikedilger/solvent)
 
+Documentation is available at https://mikedilger.github.io/solvent
+
 Solvent helps you to resolve dependency orderings by building up a dependency
 graph and then resolving the dependences of some target node in an order such
 that each output depends only upon the previous outputs.
