@@ -32,7 +32,10 @@
 //!     // previous outputs (or nothing).  The target itself will be output
 //!     // last.
 //!     for node in depgraph.dependencies_of("a") {
-//!         print!("{} ", node.unwrap());
+//!         match node {
+//!             Ok(n) => print!("{} ", n),
+//!             Err(e) => panic!("Solvent error detected: {:?}", e),
+//!         }
 //!     }
 //! }
 //! ```
@@ -262,7 +265,10 @@ fn solvent_test_branching() {
         // detect infinite looping bugs
         assert!(results.len() < 30);
 
-        let n = node.unwrap();
+        let n = match node {
+            Err(e) => panic!("Solvent error detected: {:?}", e),
+            Ok(n) => n,
+        };
 
         // Check that all of that nodes dependencies have already been output
         let deps: Option<&HashSet<String>> = depgraph.dependencies.get(&n);
@@ -334,7 +340,10 @@ fn solvent_test_satisfied_stoppage() {
 
     for node in depgraph.dependencies_of("appconn") {
         assert!(results.len() < 30);
-        results.push(node.unwrap());
+        match node {
+            Ok(n) => results.push(n),
+            Err(e) => panic!("Solvent error detected: {:?}",e),
+        };
     }
 
     // Be sure we did not depend on these
