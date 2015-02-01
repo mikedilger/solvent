@@ -63,6 +63,11 @@
 #![crate_name = "solvent"]
 #![crate_type = "lib"]
 
+// Silence warnings about unstable library features
+#![feature(core)]
+#![feature(collections)]
+#![feature(std_misc)]
+
 #[macro_use] extern crate log;
 
 use std::collections::{HashMap,HashSet};
@@ -83,7 +88,7 @@ pub struct DepGraph {
     pub satisfied: HashSet<String>,
 }
 
-#[derive(Copy,Show,PartialEq)]
+#[derive(Copy,Debug,PartialEq)]
 pub enum SolventError {
     CycleDetected,
     // TODO once we implement conflicts: Conflict(String)
