@@ -65,7 +65,6 @@
 
 // Silence warnings about unstable library features
 #![feature(core)]
-#![feature(collections)]
 #![feature(std_misc)]
 
 #[macro_use] extern crate log;
@@ -130,14 +129,14 @@ impl DepGraph {
                                 node: &'a str,
                                 depends_on: &'a str )
     {
-        match self.dependencies.entry( String::from_str(node) ) {
+        match self.dependencies.entry( node.to_string() ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity(1);
-                deps.insert( String::from_str(depends_on) );
+                deps.insert( depends_on.to_string() );
                 entry.insert( deps );
             },
             Entry::Occupied(mut entry) => {
-                (*entry.get_mut()).insert(String::from_str(depends_on));
+                (*entry.get_mut()).insert( depends_on.to_string() );
             },
         }
     }
@@ -150,17 +149,17 @@ impl DepGraph {
                                   node: &'a str,
                                   depends_on: &'a[&'a str] )
     {
-        match self.dependencies.entry( String::from_str(node) ) {
+        match self.dependencies.entry( node.to_string() ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity( depends_on.len() );
                 for s in depends_on.iter() {
-                    deps.insert( String::from_str(*s) );
+                    deps.insert( s.to_string() );
                 }
                 entry.insert( deps );
             },
             Entry::Occupied(mut entry) => {
                 for s in depends_on.iter() {
-                    (*entry.get_mut()).insert( String::from_str(*s) );
+                    (*entry.get_mut()).insert( s.to_string() );
                 }
             },
         }
@@ -172,7 +171,7 @@ impl DepGraph {
                                    nodes: &'a[&'a str] )
     {
         for node in nodes.iter() {
-            self.satisfied.insert(String::from_str(*node));
+            self.satisfied.insert( node.to_string() );
         }
     }
 
@@ -352,9 +351,9 @@ fn solvent_test_satisfied_stoppage() {
     }
 
     // Be sure we did not depend on these
-    assert!( !results.contains(&String::from_str("appuser")) );
-    assert!( !results.contains(&String::from_str("owneruser")) );
-    assert!( !results.contains(&String::from_str("superconn")) );
+    assert!( !results.contains( &"appuser".to_string()) );
+    assert!( !results.contains( &"owneruser".to_string()) );
+    assert!( !results.contains( &"superconn".to_string()) );
 
     // Be sure we actually output enough stuff
     assert!(results.len() == 7);
