@@ -44,7 +44,7 @@
 <h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>solvent</a><wbr></span><span class='out-of-band'><a href='stability.html'>[stability]</a> <span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-0' href='../src/solvent/lib.rs.html#1-356'>[src]</a></span></h1>
+        </span><a id='src-0' href='../src/solvent/lib.rs.html#1-369'>[src]</a></span></h1>
 <div class='docblock'><p>Solvent is a dependency resolver library written in rust.</p>
 
 <p>Solvent helps you to resolve dependency orderings by building up a dependency
@@ -78,7 +78,10 @@ that each output depends only upon the previous outputs.</p>
     <span class='comment'>// previous outputs (or nothing).  The target itself will be output</span>
     <span class='comment'>// last.</span>
     <span class='kw'>for</span> <span class='ident'>node</span> <span class='kw'>in</span> <span class='ident'>depgraph</span>.<span class='ident'>dependencies_of</span>(<span class='string'>&quot;a&quot;</span>) {
-        <span class='macro'>print</span><span class='macro'>!</span>(<span class='string'>&quot;{} &quot;</span>, <span class='ident'>node</span>.<span class='ident'>unwrap</span>());
+        <span class='kw'>match</span> <span class='ident'>node</span> {
+            <span class='prelude-val'>Ok</span>(<span class='ident'>n</span>) <span class='op'>=&gt;</span> <span class='macro'>print</span><span class='macro'>!</span>(<span class='string'>&quot;{} &quot;</span>, <span class='ident'>n</span>),
+            <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Solvent error detected: {:?}&quot;</span>, <span class='ident'>e</span>),
+        }
     }
 }
 </pre>

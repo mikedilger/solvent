@@ -26,7 +26,7 @@
 
     <section class="sidebar">
         <a href='../log/index.html'><img src='http://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='' width='100'></a>
-        <p class='location'><a href='index.html'>log</a></p><div class='block mod'><h2>Modules</h2><a class='mod ' href='macros/index.html'>macros</a></div><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.LogLevel.html'>LogLevel</a><a class='struct ' href='struct.LogRecord.html'>LogRecord</a></div><div class='block trait'><h2>Traits</h2><a class='trait ' href='trait.Logger.html'>Logger</a></div><div class='block fn'><h2>Functions</h2><a class='fn ' href='fn.set_logger.html'>set_logger</a></div><div class='block macro'><h2>Macros</h2><a class='macro ' href='macro.debug!.html'>debug!</a><a class='macro ' href='macro.error!.html'>error!</a><a class='macro ' href='macro.info!.html'>info!</a><a class='macro ' href='macro.log!.html'>log!</a><a class='macro ' href='macro.log_enabled!.html'>log_enabled!</a><a class='macro current' href='macro.warn!.html'>warn!</a></div>
+        <p class='location'><a href='index.html'>log</a></p><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.LogLocation.html' title='The location of a log message.'>LogLocation</a><a class='struct ' href='struct.LogRecord.html' title='The &quot;payload&quot; of a log message.'>LogRecord</a><a class='struct ' href='struct.MaxLogLevelFilter.html' title='A token providing read and write access to the global maximum log level filter.'>MaxLogLevelFilter</a><a class='struct ' href='struct.SetLoggerError.html' title='The type returned by `set_logger` if `set_logger` has already been called.'>SetLoggerError</a></div><div class='block enum'><h2>Enums</h2><a class='enum ' href='enum.LogLevel.html' title='An enum representing the available verbosity levels of the logging framework'>LogLevel</a><a class='enum ' href='enum.LogLevelFilter.html' title='An enum representing the available verbosity level filters of the logging framework.'>LogLevelFilter</a></div><div class='block trait'><h2>Traits</h2><a class='trait ' href='trait.Log.html' title='A trait encapsulating the operations required of a logger'>Log</a></div><div class='block fn'><h2>Functions</h2><a class='fn ' href='fn.enabled.html' title='Determines if the current logger will ignore a log message at the specified level from the specified module.'>enabled</a><a class='fn ' href='fn.log.html' title='Logs a message.'>log</a><a class='fn ' href='fn.max_log_level.html' title='Returns the current maximum log level.'>max_log_level</a><a class='fn ' href='fn.set_logger.html' title='Sets the global logger.'>set_logger</a></div><div class='block macro'><h2>Macros</h2><a class='macro ' href='macro.debug!.html' title='Logs a message at the debug level.'>debug!</a><a class='macro ' href='macro.error!.html' title='Logs a message at the error level.'>error!</a><a class='macro ' href='macro.info!.html' title='Logs a message at the info level.'>info!</a><a class='macro ' href='macro.log!.html' title='The standard logging macro.'>log!</a><a class='macro ' href='macro.log_enabled!.html' title='Determines if a message logged at the specified level in that module will be logged.'>log_enabled!</a><a class='macro ' href='macro.trace!.html' title='Logs a message at the trace level.'>trace!</a><a class='macro current' href='macro.warn!.html' title='Logs a message at the warn level.'>warn!</a></div>
     </section>
 
     <nav class="sub">
@@ -44,29 +44,18 @@
 <h1 class='fqn'><span class='in-band'><a href='index.html'>log</a>::<wbr><a class='macro' href=''>warn!</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-2019' href='../src/log/macros.rs.html#110-112'>[src]</a></span></h1>
+        </span><a id='src-1900' href='../src/log/macros.rs.html#53-57'>[src]</a></span></h1>
 <pre class='rust macro'>
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>warn</span> {
-    ($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>:<span class='ident'>tt</span>)<span class='op'>*</span>) <span class='op'>=&gt;</span> (<span class='macro'>log</span><span class='macro'>!</span>(::<span class='ident'>log</span>::<span class='ident'>WARN</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>)<span class='op'>*</span>))
+    ($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>:<span class='ident'>tt</span>)<span class='op'>*</span>) <span class='op'>=&gt;</span> (
+        <span class='macro'>log</span><span class='macro'>!</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>crate</span>::<span class='ident'>LogLevel</span>::<span class='ident'>Warn</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>)<span class='op'>*</span>);
+    )
 }
 </pre>
-<div class='docblock'><p>A convenience macro for logging at the warning log level.</p>
+<div class='docblock'><p>Logs a message at the warn level.</p>
 
-<h1 id="example" class='section-header'><a
-                           href="#example">Example</a></h1><pre id='rust-example-rendered' class='rust '>
-<span class='attribute'>#[<span class='ident'>macro_use</span>]</span> <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>log</span>;
-
-<span class='kw'>fn</span> <span class='ident'>main</span>() {
-    <span class='kw'>let</span> <span class='ident'>code</span> <span class='op'>=</span> <span class='number'>3u</span>;
-    <span class='macro'>warn</span><span class='macro'>!</span>(<span class='string'>&quot;you may like to know that a process exited with: {}&quot;</span>, <span class='ident'>code</span>);
-}
-</pre>
-
-<p>Assumes the binary is <code>main</code>:</p>
-
-<pre><code class="language-{.bash}">$ RUST_LOG=warn ./main
-WARN:main: you may like to know that a process exited with: 3
-</code></pre>
+<p>Logging at this level is disabled if any of the following cfgs are present:
+<code>log_level = &quot;off&quot;</code> or <code>log_level = &quot;error&quot;</code>.</p>
 </div></section>
     <section id='search' class="content hidden"></section>
 
