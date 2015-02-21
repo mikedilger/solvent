@@ -64,7 +64,6 @@
 #![crate_type = "lib"]
 
 // Silence warnings about unstable library features
-#![feature(core)]
 #![feature(std_misc)]
 
 #[macro_use] extern crate log;
