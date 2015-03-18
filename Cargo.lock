@@ -1,0 +1,12 @@
+[root]
+name = "solvent"
+version = "0.6.0"
+dependencies = [
+ "log 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "log"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
