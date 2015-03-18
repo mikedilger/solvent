@@ -345,7 +345,7 @@ fn solvent_test_circular() {
 
     for node in depgraph.dependencies_of("a") {
         assert!(node.is_err());
-        assert!(node.unwrap_err() == SolventError::CycleDetected);
+        assert!(node.unwrap_err() == SolventError::CycleDetected("a".to_string()));
     }
 }
 
