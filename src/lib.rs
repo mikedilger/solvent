@@ -72,6 +72,8 @@ use std::collections::{HashMap,HashSet};
 use std::collections::hash_map::Entry;
 use std::iter::{Iterator};
 use std::borrow::ToOwned;
+use std::fmt;
+use std::error::Error;
 
 /// This is the dependency graph.
 #[derive(Clone)]
@@ -86,10 +88,34 @@ pub struct DepGraph {
     pub satisfied: HashSet<String>,
 }
 
-#[derive(Copy,Debug,PartialEq)]
+#[derive(Clone,Debug,PartialEq)]
 pub enum SolventError {
-    CycleDetected,
+    CycleDetected(String),
     // TODO once we implement conflicts: Conflict(String)
+}
+
+impl fmt::Display for SolventError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SolventError::CycleDetected(ref s) =>
+                format!("{}: {}", self.description(), s).fmt(f),
+            //_ => self.description().fmt(f)
+        }
+    }
+}
+
+impl Error for SolventError {
+    fn description(&self) -> &str
+    {
+        match *self {
+            SolventError::CycleDetected(_) => "Cycle Detected",
+        }
+    }
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            _ => None
+        }
+    }
 }
 
 /// This iterates through the dependencies of the DepGraph's target
@@ -196,7 +222,7 @@ impl<'a> DepGraphIterator<'a> {
     fn get_next_dependency(&mut self, node: &String) -> Result<String,SolventError>
     {
         if self.curpath.contains(node) {
-            return Err(SolventError::CycleDetected);
+            return Err(SolventError::CycleDetected(node.clone()));
         }
         self.curpath.insert(node.clone());
 
