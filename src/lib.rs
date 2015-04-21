@@ -63,10 +63,6 @@
 #![crate_name = "solvent"]
 #![crate_type = "lib"]
 
-// Silence warnings about unstable library features
-#![feature(std_misc)]
-#![feature(core)]
-
 #[macro_use] extern crate log;
 
 use std::collections::{HashMap,HashSet};
