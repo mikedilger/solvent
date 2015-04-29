@@ -48,9 +48,9 @@ dependency order.
 The algorithm is not deterministic, and may give a different answer each
 time it is run.  Beware.
 
-The iterator dependencies_of() returns an `Option&lt;Result&lt;String,SolventError&gt;&gt;`.
+The iterator dependencies_of() returns an `Option<Result<String,SolventError>>`.
 The for loop handles the Option part for you, but you may want to check the
-result for SolventErrors.  Once an error is returned, all subsequent calls to
+result for `SolventError`.  Once an error is returned, all subsequent calls to
 the iterator next() will yield None.
 
 You can also mark some elements as already satisfied, and the iterator
@@ -60,7 +60,7 @@ will take that into account:
 depgraph.mark_as_satisfied(["e","c"]);
 ```
 
-Dependency cycles are detected and will return SolventError::CycleDetected.
+Dependency cycles are detected and will return `SolventError::CycleDetected`.
 
 ## Use Cases
 These kinds of calculations are useful in the following example situations:
@@ -74,9 +74,9 @@ These kinds of calculations are useful in the following example situations:
   conflicts) -- the author wrote solvent for this purpose.
 
 ## Other Details
-While elements (nodes) are registered as slices (&amp;str) and slices of
-slices (&amp;[&amp;str]), these borrows do not persist beyond the lifetime of
-the register function call, as they are internally copied into Strings
-and Vecs (and HashMaps).
+While elements (nodes) are registered as slices (`&str`) and slices of
+slices (`&[&str]`), these borrows do not persist beyond the lifetime of
+the register function call, as they are internally copied into `String`s
+and `Vec`s (and `HashMap`s).
 
 Solvent does not yet handle boolean logic.  See issue [#1](https://github.com/mikedilger/solvent/issues/1).
