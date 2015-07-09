@@ -41,39 +41,37 @@
     </nav>
 
     <section id='main' class="content struct">
-<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>solvent</a>::<wbr><a class='struct' href=''>DepGraph</a><wbr></span><span class='out-of-band'><span id='render-detail'>
-            <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-14' href='../src/solvent/lib.rs.html#80-89'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct DepGraph {
-    pub dependencies: <a class='struct' href='http://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;&gt;,
-    pub satisfied: <a class='struct' href='http://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;,
-}</pre><div class='docblock'><p>This is the dependency graph.</p>
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>solvent</a>::<wbr><a class='struct' href=''>DepGraph</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-172' class='srclink' href='../src/solvent/lib.rs.html#96-102' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct DepGraph&lt;E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>&gt; {
+    pub dependencies: <a class='struct' href='http://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html' title='std::collections::hash::map::HashMap'>HashMap</a>&lt;E, <a class='struct' href='http://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;E&gt;&gt;,
+    pub satisfied: <a class='struct' href='http://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;E&gt;,
+}</pre><div class='docblock'><p>This is the dependency graph</p>
 </div><h2 class='fields'>Fields</h2>
-<table><tr><td id='structfield.dependencies'><a class='stability Unmarked' title='No stability level'></a><code>dependencies</code></td><td><div class='docblock'><p>List of dependencies.  Key is the element, values are the
-other elements that the key element depends upon.</p>
-</div></td></tr><tr><td id='structfield.satisfied'><a class='stability Unmarked' title='No stability level'></a><code>satisfied</code></td><td><div class='docblock'><p>Nodes already satisfied.  dependencies_of() will prune
-dependency searches at these nodes, and not output nodes
-registered here.</p>
-</div></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a></code></h4>
+<table><tr class='stab '>
+                                  <td id='structfield.dependencies'><code>dependencies</code></td><td><div class='docblock'><p>List of dependencies. The first Element depends on the set of additional Elements.</p>
+</div></td></tr><tr class='stab '>
+                                  <td id='structfield.satisfied'><code>satisfied</code></td><td><div class='docblock'><p>The set of Elements already satisfied.</p>
+</div></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>&gt; <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a>&lt;E&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a>&lt;E&gt;</code></h4>
 <div class='docblock'><p>Create an empty DepGraph.</p>
-</div><h4 id='method.register_dependency' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.register_dependency' class='fnname'>register_dependency</a>&lt;'a&gt;(&amp;mut self, node: &amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, depends_on: &amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>)</code></h4>
-<div class='docblock'><p>Add a dependency to a DepGraph.  The node does not need
-to pre-exist, nor do the dependency nodes.  But if the
-node does pre-exist, the depends_on will be added to its
-existing dependency list.</p>
-</div><h4 id='method.register_dependencies' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.register_dependencies' class='fnname'>register_dependencies</a>&lt;'a&gt;(&amp;mut self, node: &amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, depends_on: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a>&amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
-<div class='docblock'><p>Add multiple dependencies of one node to a DepGraph.  The
-node does not need to pre-exist, nor do the dependency elements.
-But if the node does pre-exist, the depends_on will be added
+</div><h4 id='method.register_dependency' class='method'><code>fn <a href='#method.register_dependency' class='fnname'>register_dependency</a>(&amp;mut self, node: E, depends_on: E)</code></h4>
+<div class='docblock'><p>Add a dependency to a DepGraph. The node does not need to pre-exist, nor do the dependency
+nodes. But if the node does pre-exist, the depends_on will be added to its existing
+dependency list.</p>
+</div><h4 id='method.register_dependencies' class='method'><code>fn <a href='#method.register_dependencies' class='fnname'>register_dependencies</a>(&amp;mut self, node: E, depends_on: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a>E<a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+<div class='docblock'><p>Add multiple dependencies of one node to a DepGraph. The node does not need to pre-exist,
+nor do the dependency elements. But if the node does pre-exist, the depends_on will be added
 to its existing dependency list.</p>
-</div><h4 id='method.mark_as_satisfied' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.mark_as_satisfied' class='fnname'>mark_as_satisfied</a>&lt;'a&gt;(&amp;mut self, nodes: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a>&amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
-<div class='docblock'><p>This marks a node as satisfied.  Iterators will not output
-such nodes.</p>
-</div><h4 id='method.dependencies_of' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.dependencies_of' class='fnname'>dependencies_of</a>&lt;'a&gt;(&amp;'a self, target: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../solvent/struct.DepGraphIterator.html' title='solvent::DepGraphIterator'>DepGraphIterator</a>&lt;'a&gt;</code></h4>
-<div class='docblock'><p>Get an iterator to iterate through the dependencies of
-the target node.</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><a class='stability Stable' title='Stable'></a><code>fn <a href='#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a></code></h4>
-<h4 id='method.clone_from' class='tymethod'><a class='stability Unstable' title='Unstable: this function is rarely used'></a><code>fn <a href='#tymethod.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+</div><h4 id='method.mark_as_satisfied' class='method'><code>fn <a href='#method.mark_as_satisfied' class='fnname'>mark_as_satisfied</a>(&amp;mut self, nodes: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a>E<a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+<div class='docblock'><p>This marks a node as satisfied.  Iterators will not output such nodes.</p>
+</div><h4 id='method.dependencies_of' class='method'><code>fn <a href='#method.dependencies_of' class='fnname'>dependencies_of</a>&lt;'a&gt;(&amp;'a self, target: E) -&gt; <a class='struct' href='../solvent/struct.DepGraphIterator.html' title='solvent::DepGraphIterator'>DepGraphIterator</a>&lt;'a, E&gt;</code></h4>
+<div class='docblock'><p>Get an iterator to iterate through the dependencies of the target node.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl&lt;E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a>&lt;E&gt; <span class='where'>where E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>, E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>, E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a></span></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a>&lt;E&gt;</code></h4>
+<h4 id='method.clone_from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+</div><h3 class='impl'><code>impl&lt;E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> + <a class='trait' href='http://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../solvent/struct.DepGraph.html' title='solvent::DepGraph'>DepGraph</a>&lt;E&gt; <span class='where'>where E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>, E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>, E: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a></span></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
@@ -106,6 +104,10 @@ the target node.</p>
                 <code>struct</code>, <code>enum</code>,
                 <code>trait</code>, <code>typedef</code> (or
                 <code>tdef</code>).
+            </p>
+            <p>
+                Search functions by type signature (e.g.
+                <code>vec -> usize</code>)
             </p>
         </div>
     </div>
