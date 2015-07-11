@@ -21,7 +21,7 @@ use solvent::DepGraph;
 
 fn main() {
     // Create a new empty DepGraph.
-    let mut depgraph: DepGraph<'str> = DepGraph::new();
+    let mut depgraph: DepGraph<&str> = DepGraph::new();
 
     // You can register a dependency like this.  Solvent will automatically create nodes for any
     // term it has not seen before.  This means 'b' depends on 'd'
