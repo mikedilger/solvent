@@ -67,9 +67,5 @@ These kinds of calculations are useful in the following example situations:
   without merge conflicts) -- the author wrote solvent for this purpose.
 
 ## Other Details
-While elements (nodes) are registered as slices (`&str`) and slices of slices (`&[&str]`), these
-borrows do not persist beyond the lifetime of the register function call, as they are internally
-copied into `String`s and `Vec`s (and `HashMap`s).
-
 Solvent does not yet handle boolean logic.  See issue [#1]
 (https://github.com/mikedilger/solvent/issues/1).
