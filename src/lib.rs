@@ -41,9 +41,9 @@
 //!
 //! The algorithm is not deterministic, and may give a different answer each time it is run. Beware.
 //!
-//! The iterator dependencies_of() returns an Option<Result<String,SolventError>>.  The for loop
-//! handles the Option part for you, but you may want to check the result for SolventErrors. Once
-//! an error is returned, all subsequent calls to the iterator next() will yield None.
+//! The iterator dependencies_of() returns an `Option<Result<E ,SolventError>>`.  The for loop
+//! handles the `Option` part for you, but you may want to check the result for `SolventError`s.
+//! Once an error is returned, all subsequent calls to the iterator `next()` will yield `None`.
 //!
 //! You can also mark some elements as already satisfied, and the iterator will take that into
 //! account
@@ -52,7 +52,7 @@
 //! depgraph.mark_as_satisfied(["e","c"]);
 //! ```
 //!
-//! Dependency cycles are detected and will return SolventError::CycleDetected.
+//! Dependency cycles are detected and will return `SolventError::CycleDetected`.
 
 #[macro_use] extern crate log;
 

@@ -44,9 +44,9 @@ The above will output:  `d b e c a` or `e c d b a` or some other valid dependenc
 
 The algorithm is not deterministic, and may give a different answer each time it is run.  Beware.
 
-The iterator dependencies_of() returns an `Option<Result<String,SolventError>>`.  The for loop
-handles the Option part for you, but you may want to check the result for `SolventError`.  Once an
-error is returned, all subsequent calls to the iterator next() will yield None.
+The iterator dependencies_of() returns an `Option<Result<E, SolventError>>`.  The for loop
+handles the `Option` part for you, but you may want to check the result for `SolventError`.  Once
+an error is returned, all subsequent calls to the iterator `next()` will yield `None`.
 
 You can also mark some elements as already satisfied, and the iterator will take that into account:
 
