@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `trace!` macro in crate `log`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, trace!">
+    <meta name="description" content="API documentation for the Rust `set_logger_raw` fn in crate `log`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, set_logger_raw">
 
-    <title>log::trace! - Rust</title>
+    <title>log::set_logger_raw - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
@@ -27,7 +27,7 @@
 
     <nav class="sidebar">
         <a href='../log/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
-        <p class='location'><a href='index.html'>log</a></p><script>window.sidebarCurrent = {name: 'trace!', ty: 'macro', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='index.html'>log</a></p><script>window.sidebarCurrent = {name: 'set_logger_raw', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -41,28 +41,33 @@
         </form>
     </nav>
 
-    <section id='main' class="content macro">
-<h1 class='fqn'><span class='in-band'><a href='index.html'>log</a>::<wbr><a class='macro' href=''>trace!</a></span><span class='out-of-band'><span id='render-detail'>
+    <section id='main' class="content fn">
+<h1 class='fqn'><span class='in-band'>Function <a href='index.html'>log</a>::<wbr><a class='fn' href=''>set_logger_raw</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-321' class='srclink' href='../src/log/macros.rs.html#115-122' title='goto source code'>[src]</a></span></h1>
-<pre class='rust macro'>
-<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>trace</span> {
-    (<span class='ident'>target</span>: <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>target</span>:<span class='ident'>expr</span>, $(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>:<span class='ident'>tt</span>)<span class='op'>*</span>) <span class='op'>=&gt;</span> { ... };
-    ($(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>arg</span>:<span class='ident'>tt</span>)<span class='op'>*</span>) <span class='op'>=&gt;</span> { ... };
-}</pre>
-<div class='docblock'><p>Logs a message at the trace level.</p>
+               </span><a id='src-251' class='srclink' href='../src/log/lib.rs.html#683-693' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub unsafe fn set_logger_raw&lt;M&gt;(make_logger: M) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='../log/struct.SetLoggerError.html' title='log::SetLoggerError'>SetLoggerError</a>&gt; <span class='where'>where M: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(<a class='struct' href='../log/struct.MaxLogLevelFilter.html' title='log::MaxLogLevelFilter'>MaxLogLevelFilter</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='trait' href='../log/trait.Log.html' title='log::Log'>Log</a></span></pre><div class='docblock'><p>Sets the global logger from a raw pointer.</p>
 
-<p>Logging at this level is disabled if any of the following features are
-present: <code>max_level_off</code>, <code>max_level_error</code>, <code>max_level_warn</code>,
-<code>max_level_info</code>, or <code>max_level_debug</code>.</p>
+<p>This function is similar to <code>set_logger</code> except that it is usable in
+<code>no_std</code> code.</p>
 
-<p>When building in release mode (i.e., without the <code>debug_assertions</code> option),
-logging at this level is also disabled if any of the following features are
-present: <code>release_max_level_off</code>, <code>release_max_level_error</code>,
-<code>release_max_level_warn</code>, <code>release_max_level_info</code>, or
-<code>release_max_level_debug</code>.</p>
+<p>The <code>make_logger</code> closure is passed a <code>MaxLogLevel</code> object, which the
+logger should use to keep the global maximum log level in sync with the
+highest log level that the logger will not ignore.</p>
+
+<p>This function may only be called once in the lifetime of a program. Any log
+events that occur before the call to <code>set_logger_raw</code> completes will be
+ignored.</p>
+
+<p>This function does not typically need to be called manually. Logger
+implementations should provide an initialization method that calls
+<code>set_logger_raw</code> internally.</p>
+
+<h1 id='safety' class='section-header'><a href='#safety'>Safety</a></h1>
+<p>The pointer returned by <code>make_logger</code> must remain valid for the entire
+duration of the program or until <code>shutdown_logger_raw</code> is called. In
+addition, <code>shutdown_logger</code> <em>must not</em> be called after this function.</p>
 </div></section>
     <section id='search' class="content hidden"></section>
 

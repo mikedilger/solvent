@@ -9,6 +9,7 @@
 
     <title>solvent - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
 
     
@@ -24,17 +25,17 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         
         <p class='location'></p><script>window.sidebarCurrent = {name: 'solvent', ty: 'mod', relpath: '../'};</script>
-    </section>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -42,10 +43,10 @@
 
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>solvent</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-0' class='srclink' href='../src/solvent/lib.rs.html#1-370' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/solvent/src/lib.rs.html#1-370' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Solvent is a dependency resolver library written in rust.</p>
 
 <p>Solvent helps you to resolve dependency orderings by building up a dependency graph and then
@@ -54,8 +55,8 @@ upon the previous outputs.</p>
 
 <p>It is currently quite simple, but is still useful.</p>
 
-<h1 id="example" class='section-header'><a
-                           href="#example">Example</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1>
+<pre class='rust rust-example-rendered'>
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>solvent</span>;
 
 <span class='kw'>use</span> <span class='ident'>solvent</span>::<span class='ident'>DepGraph</span>;
@@ -81,91 +82,94 @@ upon the previous outputs.</p>
             <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Solvent error detected: {:?}&quot;</span>, <span class='ident'>e</span>),
         }
     }
-}
-</pre>
+}</pre>
 
 <p>The above will output:  <code>d b e c a</code> or <code>e c d b a</code> or some other valid dependency order.</p>
 
 <p>The algorithm is not deterministic, and may give a different answer each time it is run. Beware.</p>
 
-<p>The iterator dependencies_of() returns an Option<Result<String,SolventError>&gt;.  The for loop
-handles the Option part for you, but you may want to check the result for SolventErrors. Once
-an error is returned, all subsequent calls to the iterator next() will yield None.</p>
+<p>The iterator dependencies_of() returns an <code>Option&lt;Result&lt;E ,SolventError&gt;&gt;</code>.  The for loop
+handles the <code>Option</code> part for you, but you may want to check the result for <code>SolventError</code>s.
+Once an error is returned, all subsequent calls to the iterator <code>next()</code> will yield <code>None</code>.</p>
 
 <p>You can also mark some elements as already satisfied, and the iterator will take that into
 account</p>
-<pre class='rust rust-example-rendered'>
-<span class='ident'>depgraph</span>.<span class='ident'>mark_as_satisfied</span>([<span class='string'>&quot;e&quot;</span>,<span class='string'>&quot;c&quot;</span>]);
-</pre>
 
-<p>Dependency cycles are detected and will return SolventError::CycleDetected.</p>
+<pre class='rust rust-example-rendered'>
+<span class='ident'>depgraph</span>.<span class='ident'>mark_as_satisfied</span>([<span class='string'>&quot;e&quot;</span>,<span class='string'>&quot;c&quot;</span>]);</pre>
+
+<p>Dependency cycles are detected and will return <code>SolventError::CycleDetected</code>.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.DepGraph.html'
-                               title='solvent::DepGraph'>DepGraph</a></td>
-                        <td class='docblock short'>
-                             <p>This is the dependency graph</p>
-
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='struct' href='struct.DepGraphIterator.html'
-                               title='solvent::DepGraphIterator'>DepGraphIterator</a></td>
-                        <td class='docblock short'>
-                             <p>This iterates through the dependencies of the DepGraph&#39;s target</p>
-
-                        </td>
-                    </tr>
-                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DepGraph.html'
+                                  title='solvent::DepGraph'>DepGraph</a></td>
+                           <td class='docblock short'>
+                                <p>This is the dependency graph</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DepGraphIterator.html'
+                                  title='solvent::DepGraphIterator'>DepGraphIterator</a></td>
+                           <td class='docblock short'>
+                                <p>This iterates through the dependencies of the DepGraph&#39;s target</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
 <table>
-                    <tr class=' module-item'>
-                        <td><a class='enum' href='enum.SolventError.html'
-                               title='solvent::SolventError'>SolventError</a></td>
-                        <td class='docblock short'>
-                             
-                        </td>
-                    </tr>
-                </table></section>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.SolventError.html'
+                                  title='solvent::SolventError'>SolventError</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
         </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-            <p>
-                Search functions by type signature (e.g.
-                <code>vec -> usize</code>)
-            </p>
-        </div>
-    </div>
+    </aside>
 
     
 
@@ -177,6 +181,6 @@ account</p>
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>
