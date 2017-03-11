@@ -16,4 +16,4 @@ doctest = true
 doc = true
 
 [dependencies]
-log = "*"
+log = "0.3"
