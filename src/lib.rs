@@ -54,8 +54,6 @@
 //!
 //! Dependency cycles are detected and will return `SolventError::CycleDetected`.
 
-#[macro_use] extern crate log;
-
 use std::collections::{HashMap,HashSet};
 use std::collections::hash_map::Entry;
 use std::iter::{Iterator};
