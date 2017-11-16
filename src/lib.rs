@@ -41,7 +41,7 @@
 //!
 //! The algorithm is not deterministic, and may give a different answer each time it is run. Beware.
 //!
-//! The iterator dependencies_of() returns an `Option<Result<E ,SolventError>>`.  The for loop
+//! The iterator dependencies_of() returns an `Option<Result<T ,SolventError>>`.  The for loop
 //! handles the `Option` part for you, but you may want to check the result for `SolventError`s.
 //! Once an error is returned, all subsequent calls to the iterator `next()` will yield `None`.
 //!
@@ -91,18 +91,18 @@ impl Error for SolventError {
 
 /// This is the dependency graph
 #[derive(Debug,Clone)]
-pub struct DepGraph<E: Eq + Copy + Hash> {
+pub struct DepGraph<T: Eq + Copy + Hash> {
     /// List of dependencies. The first Element depends on the set of additional Elements.
-    pub dependencies: HashMap<E,HashSet<E>>,
+    pub dependencies: HashMap<T, HashSet<T>>,
 
     /// The set of Elements already satisfied.
-    pub satisfied: HashSet<E>,
+    pub satisfied: HashSet<T>,
 }
 
-impl<E: Eq + Copy + Hash> DepGraph<E> {
+impl<T: Eq + Copy + Hash> DepGraph<T> {
 
     /// Create an empty DepGraph.
-    pub fn new() -> DepGraph<E> {
+    pub fn new() -> DepGraph<T> {
         DepGraph {
             dependencies: HashMap::new(),
             satisfied: HashSet::new(),
@@ -112,7 +112,7 @@ impl<E: Eq + Copy + Hash> DepGraph<E> {
     /// Add a dependency to a DepGraph. The node does not need to pre-exist, nor do the dependency
     /// nodes. But if the node does pre-exist, the depends_on will be added to its existing
     /// dependency list.
-    pub fn register_dependency(&mut self, node: E, depends_on: E) {
+    pub fn register_dependency(&mut self, node: T, depends_on: T) {
         match self.dependencies.entry( node ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity(1);
@@ -128,10 +128,10 @@ impl<E: Eq + Copy + Hash> DepGraph<E> {
     /// Add multiple dependencies of one node to a DepGraph. The node does not need to pre-exist,
     /// nor do the dependency elements. But if the node does pre-exist, the depends_on will be added
     /// to its existing dependency list.
-    pub fn register_dependencies(&mut self, node: E, depends_on: &[E]) {
+    pub fn register_dependencies(&mut self, node: T, depends_on: &[T]) {
         match self.dependencies.entry( node ) {
             Entry::Vacant(entry) => {
-                let mut deps: HashSet<E> = HashSet::with_capacity( depends_on.len() );
+                let mut deps: HashSet<T> = HashSet::with_capacity( depends_on.len() );
                 for dep in depends_on.iter() {
                     deps.insert( *dep );
                 }
@@ -146,14 +146,14 @@ impl<E: Eq + Copy + Hash> DepGraph<E> {
     }
 
     /// This marks a node as satisfied.  Iterators will not output such nodes.
-    pub fn mark_as_satisfied(&mut self, nodes: &[E]) {
+    pub fn mark_as_satisfied(&mut self, nodes: &[T]) {
         for node in nodes.iter() {
             self.satisfied.insert( *node );
         }
     }
 
     /// Get an iterator to iterate through the dependencies of the target node.
-    pub fn dependencies_of<'a>(&'a self, target: E) -> DepGraphIterator<'a, E>
+    pub fn dependencies_of<'a>(&'a self, target: T) -> DepGraphIterator<'a, T>
     {
         // TODO: iterator's satisfied could start empty, and all checks
         //       could separately check depgraph's and iterator's.  That
@@ -169,25 +169,25 @@ impl<E: Eq + Copy + Hash> DepGraph<E> {
 }
 
 /// This iterates through the dependencies of the DepGraph's target
-pub struct DepGraphIterator<'a, E: Eq + Copy + Hash + 'a> {
-    depgraph: &'a DepGraph<E>,
+pub struct DepGraphIterator<'a, T: Eq + Copy + Hash + 'a> {
+    depgraph: &'a DepGraph<T>,
 
     // Target we are trying to satisfy
-    target: E,
+    target: T,
 
     // Elements already satisfied during this iterator's walk
-    satisfied: HashSet<E>,
+    satisfied: HashSet<T>,
 
     // Current path, for cycle detection
-    curpath: HashSet<E>,
+    curpath: HashSet<T>,
 
     // Halted.  Used so that it can return None after an Err is returned.
     halted: bool,
 }
 
-impl<'a, E: Eq + Copy + Hash> DepGraphIterator<'a, E> {
+impl<'a, T: Eq + Copy + Hash> DepGraphIterator<'a, T> {
 
-    fn get_next_dependency(&mut self, node: E) -> Result<E,SolventError>
+    fn get_next_dependency(&mut self, node: T) -> Result<T,SolventError>
     {
         if self.curpath.contains(&node) {
             return Err(SolventError::CycleDetected);
@@ -212,12 +212,12 @@ impl<'a, E: Eq + Copy + Hash> DepGraphIterator<'a, E> {
     }
 }
 
-impl<'a, E: Eq + Copy + Hash> Iterator for DepGraphIterator<'a,E> {
-    type Item = Result<E,SolventError>;
+impl<'a, T: Eq + Copy + Hash> Iterator for DepGraphIterator<'a, T> {
+    type Item = Result<T, SolventError>;
 
     /// Get next dependency.  Returns None when finished.  If Some(Err(SolventError)) occurs, all
     // subsequent calls will return None.
-    fn next(&mut self) -> Option<Result<E,SolventError>>
+    fn next(&mut self) -> Option<Result<T, SolventError>>
     {
         if self.halted {
             return None;
