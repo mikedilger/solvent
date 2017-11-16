@@ -22,13 +22,13 @@
 //!     depgraph.register_dependency("b","d");
 //!
 //!     // You can also register multiple dependencies at once
-//!     depgraph.register_dependencies("a",&["b","c","d"]);
-//!     depgraph.register_dependencies("c",&["e"]);
+//!     depgraph.register_dependencies("a",vec!["b","c","d"]);
+//!     depgraph.register_dependencies("c",vec!["e"]);
 //!
 //!     // Iterate through each dependency of "a". The dependencies will be returned in an order
 //!     // such that each output only depends on the previous outputs (or nothing). The target
 //!     // itself will be output last.
-//!     for node in depgraph.dependencies_of("a") {
+//!     for node in depgraph.dependencies_of(&"a").unwrap() {
 //!         match node {
 //!             Ok(n) => print!("{} ", n),
 //!             Err(e) => panic!("Solvent error detected: {:?}", e),
@@ -45,158 +45,193 @@
 //! handles the `Option` part for you, but you may want to check the result for `SolventError`s.
 //! Once an error is returned, all subsequent calls to the iterator `next()` will yield `None`.
 //!
-//! You can also mark some elements as already satisfied, and the iterator will take that into
+//! You can also mark some nodes as already satisfied, and the iterator will take that into
 //! account
 //!
 //! ```ignore
-//! depgraph.mark_as_satisfied(["e","c"]);
+//! depgraph.mark_as_satisfied(["e","c"]).unwrap();
 //! ```
 //!
 //! Dependency cycles are detected and will return `SolventError::CycleDetected`.
 
+pub mod error;
+use error::SolventError;
+
 use std::collections::{HashMap,HashSet};
 use std::collections::hash_map::Entry;
 use std::iter::{Iterator};
-use std::fmt;
-use std::error::Error;
-use std::hash::Hash;
 
-#[derive(Clone,Debug,PartialEq)]
-pub enum SolventError {
-    /// A cycle has been detected
-    CycleDetected,
-}
-
-impl fmt::Display for SolventError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            _ => self.description().fmt(f)
-        }
-    }
-}
-
-impl Error for SolventError {
-    fn description(&self) -> &str
-    {
-        match *self {
-            SolventError::CycleDetected => "Cycle Detected",
-        }
-    }
-    fn cause(&self) -> Option<&Error> {
-        match *self {
-            _ => None
-        }
-    }
-}
-
-/// This is the dependency graph
+/// This is the dependency graph. The type `T` is intended to be a small type, or a
+/// reference to a larger type that implements `Eq` (you will need to supply the type
+/// and vectors of the type to functions).
 #[derive(Debug,Clone)]
-pub struct DepGraph<T: Eq + Copy + Hash> {
-    /// List of dependencies. The first Element depends on the set of additional Elements.
-    pub dependencies: HashMap<T, HashSet<T>>,
+pub struct DepGraph<T: Eq> {
+    // The nodes in the graph.  Each one is assigned a unique number.
+    nodes: Vec<T>,
 
-    /// The set of Elements already satisfied.
-    pub satisfied: HashSet<T>,
+    // List of dependencies. The first node depends on the set of additional nodes.
+    // We store indices into the nodes array.  This way we can have Eq + Copy + Hash
+    // without any requirements on type T.
+    dependencies: HashMap<usize, HashSet<usize>>,
+
+    // The set of nodes already satisfied (by index into the nodes array).
+    satisfied: HashSet<usize>,
 }
 
-impl<T: Eq + Copy + Hash> DepGraph<T> {
+impl<T: Eq> DepGraph<T> {
 
     /// Create an empty DepGraph.
     pub fn new() -> DepGraph<T> {
         DepGraph {
+            nodes: Vec::new(),
             dependencies: HashMap::new(),
             satisfied: HashSet::new(),
         }
     }
 
-    /// Add a dependency to a DepGraph. The node does not need to pre-exist, nor do the dependency
-    /// nodes. But if the node does pre-exist, the depends_on will be added to its existing
-    /// dependency list.
+    fn _pos(&self, node: &T) -> Option<usize> {
+        self.nodes.iter().position(|x| x==node)
+    }
+
+    fn _register_node(&mut self, node: T) -> usize {
+        match self._pos(&node) {
+            Some(pos) => pos,
+            None => {
+                self.nodes.push(node);
+                self.nodes.len() - 1
+            }
+        }
+    }
+
+    /// Register nodes in the graph. The `nodes` are added to any existing nodes,
+    /// after checking to avoid duplicates.
+    pub fn register_nodes(&mut self, mut nodes: Vec<T>) {
+        for node in nodes.drain(..) {
+            self.register_node(node);
+        }
+    }
+
+    /// Register a node in the graph. The `node` is added to any existing nodes,
+    /// after checking to avoid duplicates.
+    pub fn register_node(&mut self, node: T) {
+        self._register_node(node);
+    }
+
+    /// Add a dependency to a DepGraph. The node does not need to pre-exist, nor does the
+    /// dependency node. If the node does pre-exist, the depends_on will be added to
+    /// its existing dependency list. Otherwise it will be created.
     pub fn register_dependency(&mut self, node: T, depends_on: T) {
-        match self.dependencies.entry( node ) {
+
+        let node_pos = self._register_node(node);
+        let dep_pos = self._register_node(depends_on);
+
+        match self.dependencies.entry( node_pos ) {
             Entry::Vacant(entry) => {
                 let mut deps = HashSet::with_capacity(1);
-                deps.insert( depends_on );
+                deps.insert( dep_pos );
                 entry.insert( deps );
             },
             Entry::Occupied(mut entry) => {
-                (*entry.get_mut()).insert( depends_on );
+                (*entry.get_mut()).insert( dep_pos );
             },
         }
     }
 
-    /// Add multiple dependencies of one node to a DepGraph. The node does not need to pre-exist,
-    /// nor do the dependency elements. But if the node does pre-exist, the depends_on will be added
-    /// to its existing dependency list.
-    pub fn register_dependencies(&mut self, node: T, depends_on: &[T]) {
-        match self.dependencies.entry( node ) {
-            Entry::Vacant(entry) => {
-                let mut deps: HashSet<T> = HashSet::with_capacity( depends_on.len() );
-                for dep in depends_on.iter() {
-                    deps.insert( *dep );
-                }
-                entry.insert( deps );
-            },
-            Entry::Occupied(mut entry) => {
-                for dep in depends_on.iter() {
-                    (*entry.get_mut()).insert( *dep );
-                }
-            },
-        }
-    }
-
-    /// This marks a node as satisfied.  Iterators will not output such nodes.
-    pub fn mark_as_satisfied(&mut self, nodes: &[T]) {
-        for node in nodes.iter() {
-            self.satisfied.insert( *node );
-        }
-    }
-
-    /// Get an iterator to iterate through the dependencies of the target node.
-    pub fn dependencies_of<'a>(&'a self, target: T) -> DepGraphIterator<'a, T>
+    /// Add multiple dependencies of one node to a DepGraph. The node does not need to
+    /// pre-exist, nor does the dependency node. If the node does pre-exist, the
+    /// depends_on will be added to its existing dependency list. Otherwise it will
+    /// be created.
+    pub fn register_dependencies(&mut self, node: T, mut depends_on: Vec<T>)
     {
-        // TODO: iterator's satisfied could start empty, and all checks
-        //       could separately check depgraph's and iterator's.  That
-        //       would avoid the copy.
-        DepGraphIterator {
+        let node_pos = self._register_node(node);
+
+        let mut dep_poses: Vec<usize> = Vec::new();
+        for dp in depends_on.drain(..) {
+            let pos = self._register_node(dp);
+            dep_poses.push(pos);
+        }
+
+        match self.dependencies.entry( node_pos ) {
+            Entry::Vacant(entry) => {
+                let mut deps: HashSet<usize> = HashSet::with_capacity( dep_poses.len() );
+                for pos in dep_poses.iter() {
+                    deps.insert( *pos );
+                }
+                entry.insert( deps );
+            },
+            Entry::Occupied(mut entry) => {
+                for pos in dep_poses.iter() {
+                    (*entry.get_mut()).insert( *pos );
+                }
+            },
+        }
+    }
+
+    /// This marks a node as satisfied. Iterators will not output such nodes. Nodes
+    /// must exist.
+    pub fn mark_as_satisfied(&mut self, nodes: &[T]) -> Result<(), SolventError>
+    {
+        for node in nodes.iter() {
+            let node_pos = match self._pos(node) {
+                None => return Err(SolventError::NoSuchNode),
+                Some(pos) => pos
+            };
+
+            self.satisfied.insert( node_pos );
+        }
+
+        Ok(())
+    }
+
+    /// Get an iterator to iterate through the dependencies of the target node. Target
+    /// node must exist.
+    pub fn dependencies_of<'a>(&'a self, target: &T) -> Result<DepGraphIterator<'a, T>,
+                                                               SolventError>
+    {
+        let pos = match self._pos(target) {
+            None => return Err(SolventError::NoSuchNode),
+            Some(p) => p
+        };
+
+        Ok(DepGraphIterator {
             depgraph: self,
-            target: target,
+            target: pos,
             satisfied: self.satisfied.clone(),
             curpath: HashSet::new(),
             halted: false,
-        }
+        })
     }
 }
 
 /// This iterates through the dependencies of the DepGraph's target
-pub struct DepGraphIterator<'a, T: Eq + Copy + Hash + 'a> {
+pub struct DepGraphIterator<'a, T: Eq + 'a> {
     depgraph: &'a DepGraph<T>,
 
     // Target we are trying to satisfy
-    target: T,
+    target: usize,
 
-    // Elements already satisfied during this iterator's walk
-    satisfied: HashSet<T>,
+    // Node positions already satisfied during this iterator's walk
+    satisfied: HashSet<usize>,
 
     // Current path, for cycle detection
-    curpath: HashSet<T>,
+    curpath: HashSet<usize>,
 
     // Halted.  Used so that it can return None after an Err is returned.
     halted: bool,
 }
 
-impl<'a, T: Eq + Copy + Hash> DepGraphIterator<'a, T> {
+impl<'a, T: Eq> DepGraphIterator<'a, T> {
 
-    fn get_next_dependency(&mut self, node: T) -> Result<T,SolventError>
+    fn get_next_dependency(&mut self, pos: usize) -> Result<usize, SolventError>
     {
-        if self.curpath.contains(&node) {
+        if self.curpath.contains(&pos) {
             return Err(SolventError::CycleDetected);
         }
-        self.curpath.insert(node);
+        self.curpath.insert(pos);
 
-        let deplist = match self.depgraph.dependencies.get(&node) {
-            None => return Ok(node),
-            Some(deplist) => deplist.clone() // ouch
+        let deplist = match self.depgraph.dependencies.get(&pos) {
+            None => return Ok(pos),
+            Some(deplist) => deplist
         };
 
         for n in deplist.iter() {
@@ -207,29 +242,31 @@ impl<'a, T: Eq + Copy + Hash> DepGraphIterator<'a, T> {
 
             return self.get_next_dependency(*n);
         }
+
         // nodes dependencies are satisfied
-        Ok(node)
+        Ok(pos)
     }
 }
 
-impl<'a, T: Eq + Copy + Hash> Iterator for DepGraphIterator<'a, T> {
-    type Item = Result<T, SolventError>;
+impl<'a, T: Eq> Iterator for DepGraphIterator<'a, T> {
+    type Item = Result<&'a T, SolventError>;
 
-    /// Get next dependency.  Returns None when finished.  If Some(Err(SolventError)) occurs, all
-    // subsequent calls will return None.
-    fn next(&mut self) -> Option<Result<T, SolventError>>
+    // Get next dependency.  Returns None when finished.  If Some(Err(SolventError)) occurs,
+    // all subsequent calls will return None.
+    fn next(&mut self) -> Option<Result<&'a T, SolventError>>
     {
         if self.halted {
             return None;
         }
 
-        let node = self.target.clone();
-        if self.satisfied.contains(&node) {
+        let npos = self.target;
+        if self.satisfied.contains(&npos) {
+            self.halted = true;
             return None;
         }
 
         self.curpath.clear();
-        let next = match self.get_next_dependency(node) {
+        let next = match self.get_next_dependency(npos) {
             Ok(d) => d,
             Err(e) => {
                 self.halted = true;
@@ -237,33 +274,36 @@ impl<'a, T: Eq + Copy + Hash> Iterator for DepGraphIterator<'a, T> {
             }
         };
         self.satisfied.insert(next);
-        Some(Ok(next))
+        Some(Ok(&self.depgraph.nodes[next]))
     }
 }
 
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
-    use super::{SolventError,DepGraph};
+    use super::DepGraph;
+    use super::SolventError;
 
 
     #[test]
     fn solvent_test_branching() {
         let mut depgraph: DepGraph<&str> = DepGraph::new();
 
-        depgraph.register_dependencies("a",&["b","c","d"]);
+        depgraph.register_nodes(vec!["a","b","c","d","e","f","g","h","i","j","k","l","m","n"]);
+
+        depgraph.register_dependencies("a", vec!["b","c","d"]);
         depgraph.register_dependency("b","d");
-        depgraph.register_dependencies("c",&["e","m","g"]);
+        depgraph.register_dependencies("c", vec!["e","m","g"]);
         depgraph.register_dependency("e","f");
         depgraph.register_dependency("g","h");
         depgraph.register_dependency("h","i");
-        depgraph.register_dependencies("i",&["j","k"]);
-        depgraph.register_dependencies("k",&["l","m"]);
+        depgraph.register_dependencies("i", vec!["j","k"]);
+        depgraph.register_dependencies("k", vec!["l","m"]);
         depgraph.register_dependency("m","n");
 
         let mut results: Vec<&str> = Vec::new();
 
-        for node in depgraph.dependencies_of("a") {
+        for node in depgraph.dependencies_of(&"a").unwrap() {
             // detect infinite looping bugs
             assert!(results.len() < 30);
 
@@ -273,10 +313,11 @@ mod test {
             };
 
             // Check that all of that nodes dependencies have already been output
-            let deps: Option<&HashSet<&str>> = depgraph.dependencies.get(&n);
+            let pos = depgraph._pos(&n).unwrap();
+            let deps: Option<&HashSet<usize>> = depgraph.dependencies.get(&pos);
             if deps.is_some() {
                 for dep in deps.unwrap().iter() {
-                    assert!( results.contains(dep) );
+                    assert!( results.contains(&depgraph.nodes[*dep]) );
                 }
             }
 
@@ -300,11 +341,11 @@ mod test {
     fn solvent_test_updating_dependencies() {
         let mut depgraph: DepGraph<&str> = DepGraph::new();
 
-        depgraph.register_dependencies("a",&["b","c"]);
+        depgraph.register_dependencies("a",vec!["b","c"]);
         depgraph.register_dependency("a","d");
-        assert!(depgraph.dependencies.get("a").unwrap().contains("b"));
-        assert!(depgraph.dependencies.get("a").unwrap().contains("c"));
-        assert!(depgraph.dependencies.get("a").unwrap().contains("d"));
+        assert!(depgraph.dependencies.get(&0).unwrap().contains(&1));
+        assert!(depgraph.dependencies.get(&0).unwrap().contains(&2));
+        assert!(depgraph.dependencies.get(&0).unwrap().contains(&3));
     }
 
     #[test]
@@ -315,7 +356,7 @@ mod test {
         depgraph.register_dependency("b","c");
         depgraph.register_dependency("c","a");
 
-        for node in depgraph.dependencies_of("a") {
+        for node in depgraph.dependencies_of(&"a").unwrap() {
             assert!(node.is_err());
             assert!(node.unwrap_err() == SolventError::CycleDetected);
         }
@@ -325,22 +366,23 @@ mod test {
     fn solvent_test_satisfied_stoppage() {
 
         let mut depgraph: DepGraph<&str> = DepGraph::new();
-        depgraph.register_dependencies("superconn", &[]);
-        depgraph.register_dependencies("owneruser", &["superconn"]);
-        depgraph.register_dependencies("appuser", &["superconn"]);
-        depgraph.register_dependencies("database", &["owneruser"]);
-        depgraph.register_dependencies("ownerconn", &["database","owneruser"]);
-        depgraph.register_dependencies("adminconn", &["database"]);
-        depgraph.register_dependencies("extensions", &["database","adminconn"]);
-        depgraph.register_dependencies("schema_table", &["database","ownerconn"]);
-        depgraph.register_dependencies("schemas", &["ownerconn","extensions","schema_table","appuser"]);
-        depgraph.register_dependencies("appconn", &["database","appuser","schemas"]);
+        depgraph.register_dependencies("superconn", vec![]);
+        depgraph.register_dependencies("owneruser", vec!["superconn"]);
+        depgraph.register_dependencies("appuser", vec!["superconn"]);
+        depgraph.register_dependencies("database", vec!["owneruser"]);
+        depgraph.register_dependencies("ownerconn", vec!["database","owneruser"]);
+        depgraph.register_dependencies("adminconn", vec!["database"]);
+        depgraph.register_dependencies("extensions", vec!["database","adminconn"]);
+        depgraph.register_dependencies("schema_table", vec!["database","ownerconn"]);
+        depgraph.register_dependencies("schemas", vec!["ownerconn","extensions","schema_table","appuser"]);
+        depgraph.register_dependencies("appconn", vec!["database","appuser","schemas"]);
 
-        depgraph.mark_as_satisfied(&["owneruser","appuser"]);
+        depgraph.mark_as_satisfied(&["owneruser","appuser"]).unwrap();
+        assert_eq!( depgraph.satisfied.len() , 2 );
 
         let mut results: Vec<&str> = Vec::new();
 
-        for node in depgraph.dependencies_of("appconn") {
+        for node in depgraph.dependencies_of(&"appconn").unwrap() {
             assert!(results.len() < 30);
             match node {
                 Ok(n) => results.push(n),
