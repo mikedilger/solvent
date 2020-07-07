@@ -12,7 +12,7 @@ pub enum SolventError {
 impl fmt::Display for SolventError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            _ => self.description().fmt(f)
+            _ => self.to_string().fmt(f)
         }
     }
 }
@@ -25,7 +25,7 @@ impl Error for SolventError {
             SolventError::NoSuchNode => "No Such Node",
         }
     }
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
             _ => None
         }
