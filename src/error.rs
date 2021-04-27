@@ -1,8 +1,7 @@
-
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SolventError {
     /// A cycle has been detected
     CycleDetected,
@@ -12,22 +11,10 @@ pub enum SolventError {
 impl fmt::Display for SolventError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            _ => self.description().fmt(f)
+            SolventError::CycleDetected => write!(f, "Cycle Detected"),
+            SolventError::NoSuchNode => write!(f, "No Such Node"),
         }
     }
 }
 
-impl Error for SolventError {
-    fn description(&self) -> &str
-    {
-        match *self {
-            SolventError::CycleDetected => "Cycle Detected",
-            SolventError::NoSuchNode => "No Such Node",
-        }
-    }
-    fn cause(&self) -> Option<&Error> {
-        match *self {
-            _ => None
-        }
-    }
-}
+impl Error for SolventError {}

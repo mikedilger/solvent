@@ -7,6 +7,7 @@ repository = "https://github.com/mikedilger/solvent"
 readme = "README.md"
 keywords = [ "dependency", "graph", "solver", "resolver" ]
 license = "MIT"
+edition = "2018"
 
 [lib]
 name = "solvent"
