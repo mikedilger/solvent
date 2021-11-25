@@ -57,7 +57,11 @@
 pub mod error;
 pub use error::SolventError;
 
+#[cfg(feature = "deterministic")]
+use indexmap::{map::IndexMap as HashMap, set::IndexSet as HashSet};
+#[cfg(not(feature = "deterministic"))]
 use std::collections::{HashMap, HashSet};
+
 use std::iter::Iterator;
 
 /// This is the dependency graph. The type `T` is intended to be a small type, or a
@@ -263,8 +267,8 @@ impl<'a, T: Eq> Iterator for DepGraphIterator<'a, T> {
 #[cfg(test)]
 mod test {
     use super::DepGraph;
+    use super::HashSet;
     use super::SolventError;
-    use std::collections::HashSet;
 
     #[test]
     fn solvent_test_branching() {
