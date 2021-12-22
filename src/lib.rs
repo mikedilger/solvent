@@ -187,7 +187,7 @@ impl<T: Eq> DepGraph<T> {
             depgraph: self,
             target: pos,
             satisfied: self.satisfied.clone(),
-            curpath: HashSet::new(),
+            curpath: Vec::new(),
             halted: false,
         })
     }
@@ -204,7 +204,7 @@ pub struct DepGraphIterator<'a, T: Eq + 'a> {
     satisfied: HashSet<usize>,
 
     // Current path, for cycle detection
-    curpath: HashSet<usize>,
+    curpath: Vec<usize>,
 
     // Halted.  Used so that it can return None after an Err is returned.
     halted: bool,
@@ -213,9 +213,10 @@ pub struct DepGraphIterator<'a, T: Eq + 'a> {
 impl<'a, T: Eq> DepGraphIterator<'a, T> {
     fn get_next_dependency(&mut self, pos: usize) -> Result<usize, SolventError> {
         if self.curpath.contains(&pos) {
-            return Err(SolventError::CycleDetected);
+            let s = format!("{:?}", self.curpath);
+            return Err(SolventError::CycleDetected(s));
         }
-        self.curpath.insert(pos);
+        self.curpath.push(pos);
 
         let deplist = match self.depgraph.dependencies.get(&pos) {
             None => return Ok(pos),
@@ -251,7 +252,7 @@ impl<'a, T: Eq> Iterator for DepGraphIterator<'a, T> {
             return None;
         }
 
-        self.curpath.clear();
+        self.curpath.drain(..);
         let next = match self.get_next_dependency(npos) {
             Ok(d) => d,
             Err(e) => {
@@ -346,7 +347,6 @@ mod test {
 
         for node in depgraph.dependencies_of(&"a").unwrap() {
             assert!(node.is_err());
-            assert!(node.unwrap_err() == SolventError::CycleDetected);
         }
     }
 
